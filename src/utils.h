@@ -1,6 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-typedef unsigned char byte;
+typedef char byte;
 
 #endif //UTILS_H

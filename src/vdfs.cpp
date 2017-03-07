@@ -14,5 +14,5 @@ VDFileSys::~VDFileSys()
 
 int VDFileSys::mkfs()
 {
-
+    return 0;
 }

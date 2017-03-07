@@ -51,12 +51,12 @@ int DiskMgr::devStart(Buf* bp)
         return 0;
     }
 
-    if (bp->b_flags & Buf::B_READ != 0)
+    if ( (bp->b_flags & Buf::B_READ) != 0)
     {
         this->read(bp->b_blkno, bp->b_addr);
     }
 
-    if (bp->b_flags & Buf::B_WRITE != 0)
+    if ( (bp->b_flags & Buf::B_WRITE) != 0)
     {
         this->write(bp->b_blkno, bp->b_addr);
     }
