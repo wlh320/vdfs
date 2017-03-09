@@ -12,6 +12,7 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     { "ls",    &Shell::do_ls,    "列出路径下的文件",        "ls [路径]" },
     { "cd",    &Shell::do_cd,    "修改当前路径",           "cd 路径" },
     { "load",  &Shell::do_load,  "加载虚拟磁盘文件",        "load 磁盘文件路径"},
+    { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
     { NULL,   NULL,            NULL,                   NULL }
 };
 
@@ -25,6 +26,8 @@ Shell::Shell()
     this->command = NULL;
     this->args = new char*[ARG_MAX];
     this->argc = 0;
+
+    this->vdfs = new VDFileSys();
 
     printf("Welcome to VDFS(Virtual Disk File System) shell 1.0\n");
     printf("Type \"help\" for more information. Type \"exit\" to quit.\n\n");
@@ -118,7 +121,30 @@ void Shell::do_load()
     }
     else
     {
+        //先尝试打开
+        int res = vdfs->openDisk(this->args[0]);
+        if (res)
+        {
+            //打开不成功，创建并格式化一个新磁盘
+            printf("WARN: No such disk, we'll make one for you.\n");
+            vdfs->creatDisk(this->args[0]);
+            vdfs->mkfs();
+        }
         strcpy(this->disk, this->args[0]);
+    }
+}
+
+// 卸载磁盘文件
+void Shell::do_eject()
+{
+    if(strcmp(this->disk, "No Disk"))
+    {
+        vdfs->closeDisk();
+        strcpy(this->disk, "No Disk");
+    }
+    else
+    {
+        printf("WARN: No disk is open!");
     }
 }
 

@@ -25,52 +25,57 @@ using namespace std;
 // SuperBlock 结构, 共 1024 bytes
 struct SuperBlock
 {
-    int	s_isize;		/* 外存Inode区占用的盘块数 */
-    int	s_fsize;		/* 盘块总数 */
+    int	s_isize;        /* 外存Inode区占用的盘块数 */
+    int	s_fsize;        /* 盘块总数 */
 
-    int	s_nfree;		/* 直接管理的空闲盘块数量 */
-    int	s_free[100];	/* 直接管理的空闲盘块索引表 */
+    int	s_nfree;        /* 直接管理的空闲盘块数量 */
+    int	s_free[100];    /* 直接管理的空闲盘块索引表 */
 
-    int	s_ninode;		/* 直接管理的空闲外存Inode数量 */
-    int	s_inode[100];	/* 直接管理的空闲外存Inode索引表 */
+    int	s_ninode;       /* 直接管理的空闲外存Inode数量 */
+    int	s_inode[100];   /* 直接管理的空闲外存Inode索引表 */
 
-    int	s_flock;		/* 封锁空闲盘块索引表标志 */
-    int	s_ilock;		/* 封锁空闲Inode表标志 */
+    int	s_flock;        /* 封锁空闲盘块索引表标志 */
+    int	s_ilock;        /* 封锁空闲Inode表标志 */
 
-    int	s_fmod;			/* 内存中super block副本被修改标志，意味着需要更新外存对应的Super Block */
-    int	s_ronly;		/* 本文件系统只能读出 */
-    int	s_time;			/* 最近一次更新时间 */
-    int	padding[47];	/* 填充使SuperBlock块大小等于1024字节，占据2个扇区 */
+    int	s_fmod;         /* 内存中super block副本被修改标志，意味着需要更新外存对应的Super Block */
+    int	s_ronly;        /* 本文件系统只能读出 */
+    int	s_time;         /* 最近一次更新时间 */
+    int	padding[47];    /* 填充使SuperBlock块大小等于1024字节，占据2个扇区 */
 };
 
 // Inode 结构, 一个 64 bytes, 一块有8个, 共占 10块,
 struct DiskInode
 {
-    unsigned int d_mode;	/* 状态的标志位，定义见enum INodeFlag */
-    int		d_nlink;		/* 文件联结计数，即该文件在目录树中不同路径名的数量 */
+    unsigned int d_mode;    /* 状态的标志位，定义见enum INodeFlag */
+    int     d_nlink;        /* 文件联结计数，即该文件在目录树中不同路径名的数量 */
 
-    short	d_uid;			/* 文件所有者的用户标识数 */
-    short	d_gid;			/* 文件所有者的组标识数 */
+    short   d_uid;          /* 文件所有者的用户标识数 */
+    short   d_gid;          /* 文件所有者的组标识数 */
 
-    int		d_size;			/* 文件大小，字节为单位 */
-    int		d_addr[10];		/* 用于文件逻辑块号和物理块号转换的基本索引表 */
+    int     d_size;         /* 文件大小，字节为单位 */
+    int     d_addr[10];     /* 用于文件逻辑块号和物理块号转换的基本索引表 */
 
-    int		d_atime;		/* 最后访问时间 */
-    int		d_mtime;		/* 最后修改时间 */
+    int     d_atime;        /* 最后访问时间 */
+    int     d_mtime;        /* 最后修改时间 */
 };
 
 //磁盘管理类
 class DiskMgr
 {
+public:
+    const static int BLOCK_SIZE = 512;
+    const static int NSECTOR = 512;
 private:
     fstream *disk;
-    const static int BLOCK_SIZE = 512;
+
 public:
     DiskMgr();
     ~DiskMgr();
     bool isOpen();
     int devStart(Buf*);
-    void openDisk(const char*); //打开文件
+    int openDisk(const char*); //打开虚拟磁盘文件
+    int creatDisk(const char*); //新建一个空的虚拟磁盘文件
+    void closeDisk(); //关闭磁盘
     void read(int, byte*);  //将一个block读到缓存
     void write(int, byte*); //将一个block写回磁盘
 };

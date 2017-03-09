@@ -1,5 +1,4 @@
 #include "disk.h"
-//#include <ios>
 
 DiskMgr::DiskMgr()
 {
@@ -20,15 +19,41 @@ bool DiskMgr::isOpen()
     return (disk != NULL);
 }
 
-void DiskMgr::openDisk(const char *file)
+int DiskMgr::openDisk(const char *file)
 {
     disk = new fstream();
     disk->open(file, ios::in | ios::out | ios::binary);
 
-    if(!disk->is_open())
+    if(disk->fail())
     {
         printf("Error:加载虚拟磁盘失败!\n");
+        return ERR;
     }
+    return 0;
+}
+
+
+int DiskMgr::creatDisk(const char *file)
+{// 创建一个全0的空白磁盘
+    fstream *tmp = new fstream();
+    tmp->open(file, ios::out | ios::binary);
+
+    if(tmp->fail())
+    {
+        printf("Error:创建新磁盘失败!\n");
+        return ERR;
+    }
+    tmp->seekg(BLOCK_SIZE * NSECTOR - 1);
+    *tmp << '\0';
+    tmp->close();
+    return 0;
+}
+
+void DiskMgr::closeDisk()
+{
+    if (disk)
+        delete disk;
+    disk = NULL;
 }
 
 void DiskMgr::read(int blkno, byte *buffer)

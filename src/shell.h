@@ -8,6 +8,8 @@
 #ifndef SHELL_H
 #define SHELL_H
 
+#include "vdfs.h"
+
 const int PATH_MAX = 1024; //路径的最大长度
 const int CBUF_MAX = 1024; //命令buffer的最大长度
 const int ARG_MAX = 32;    //命令参数的最大个数
@@ -36,6 +38,8 @@ private:
     char **args;    // Arguments array 参数数组
     int  argc;      // Arguments Count 参数个数
 
+    VDFileSys *vdfs;
+
     static CmdTblEntry cte[CTE_MAX]; //Built-in Command Entry Table
 
 public:
@@ -50,6 +54,7 @@ public:
 
     // 内置命令入口函数
     void do_load();
+    void do_eject();
     void do_exit();
     void do_help();
     void do_ls();

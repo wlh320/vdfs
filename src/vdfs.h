@@ -11,7 +11,6 @@
 
 #include "buffer.h"
 #include "disk.h"
-#include "shell.h"
 
 
 // Virtual Disk File System
@@ -24,8 +23,19 @@ public:
     VDFileSys();
     ~VDFileSys();
 
-    //功能
+    //功能接口
+    int openDisk(char*);
+    int creatDisk(char*);
+    int closeDisk();
     int mkfs(); //格式化磁盘
+    void ls();  //list
+    int fopen(char*, int); // open file
+    void fclose(int); // close file
+    int fread(int, char*, int); // read file
+    int fwrite(int, char*, int); // write file
+    int flseek(int, int); // seek
+    int fcreat(char*, int); // create file
+    int fdelete(char*); // delete file
 };
 
 #endif // VDFS_H
