@@ -36,8 +36,8 @@ public:
     Buf*    av_back;
 
     short   b_dev;			/* 主、次设备号，其中高8位是主设备号，低8位是次设备号 */
-    int     b_wcount;		/* 需传送的字节数 */
-    char*   b_addr;	/* 指向该缓存控制块所管理的缓冲区的首地址 */
+    int     b_wcount;       /* 需传送的字节数 */
+    char*   b_addr;         /* 指向该缓存控制块所管理的缓冲区的首地址 */
     int     b_blkno;		/* 磁盘逻辑块号 */
     int     b_error;		/* I/O出错时信息 */
     int     b_resid;		/* I/O出错时尚未传送的剩余字节数 */
@@ -56,8 +56,11 @@ private:
     Buf* d_actf; // I/O请求队列
     Buf* d_actl; // I/O请求队列
 
+    Buf freelist; //空闲队列
+
 public:
     int strategy(Buf* bp);
+
     int init();
 };
 

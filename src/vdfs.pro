@@ -7,7 +7,8 @@ SOURCES += main.cpp \
     buffer.cpp \
     disk.cpp \
     shell.cpp \
-    vdfs.cpp
+    vdfs.cpp \
+    utils.cpp
 
 HEADERS += \
     buffer.h \

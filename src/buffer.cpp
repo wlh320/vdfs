@@ -4,6 +4,14 @@
 int BufMgr::init()
 {
     //Buf *bp;
+    this->freelist.b_forw  = this->freelist.b_back  = &(this->freelist);
+    this->freelist.av_forw = this->freelist.av_back = &(this->freelist);
+
+    for(int i = 0; i < NBUF; ++i)
+    {
+        //bp = &(this->m_Buf[i]);
+
+    }
 
     return 0;
 }

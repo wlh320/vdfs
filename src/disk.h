@@ -11,15 +11,20 @@
 #include "utils.h"
 #include <fstream>
 using namespace std;
-/*
+
+/*                      磁盘分布信息
  *
- * 0     1     2              12
+ * SuperBlock区： 2个扇区
+ * Inode区：一个扇区8个Inode，共128个Inode,128/8=16个扇区
+ * 数据区：大小 2M, 共 2*1024*1024/512 = 4096个扇区
+ *
+ * 0     1     2             18
  * +---------------------------------------------------+
  * |           |              |                        |
  * | SuperBlock|   Inodes     |  Datas                 |
  * |           |              |                        |
  * +---------------------------------------------------+
- *
+ *       2            16                 4096
  */
 
 // SuperBlock 结构, 共 1024 bytes
@@ -43,7 +48,34 @@ struct SuperBlock
     int	padding[47];    /* 填充使SuperBlock块大小等于1024字节，占据2个扇区 */
 };
 
-// Inode 结构, 一个 64 bytes, 一块有8个, 共占 10块,
+// Bitmap 定义
+template<int size>
+class Bitmap
+{
+private:
+    unsigned int bitmap[size];
+public:
+    Bitmap(){memset(bitmap, 0x0, sizeof(bitmap));}
+    int alloc(); // 找到一个free的block
+    void release(int blkno); //释放一个block
+};
+
+typedef Bitmap<128> BlockBitmap;
+typedef Bitmap<4> InodeBitmap;
+
+
+// 内存Inode
+class Inode
+{
+public:
+    static const int SMALL_FILE_BLOCK = 6;	/* 小型文件：直接索引表最多可寻址的逻辑块号 */
+    static const int LARGE_FILE_BLOCK = 128 * 2 + 6;	/* 大型文件：经一次间接索引表最多可寻址的逻辑块号 */
+    static const int HUGE_FILE_BLOCK = 128 * 128 * 2 + 128 * 2 + 6;	/* 巨型文件：经二次间接索引最大可寻址文件逻辑块号 */
+private:
+
+};
+
+// 外存 Inode 结构, 一个 64 bytes, 一块有8个
 struct DiskInode
 {
     unsigned int d_mode;    /* 状态的标志位，定义见enum INodeFlag */
@@ -59,23 +91,53 @@ struct DiskInode
     int     d_mtime;        /* 最后修改时间 */
 };
 
+// 目录项结构
+class DirectoryEntry
+{
+public:
+    static const int DIRSIZE = 28;	/* 目录项中路径部分的最大字符串长度 */
+
+    /* Functions */
+public:
+    /* Constructors */
+    DirectoryEntry();
+    /* Destructors */
+    ~DirectoryEntry();
+
+    /* Members */
+public:
+    int m_ino;		/* 目录项中Inode编号部分 */
+    char m_name[DIRSIZE];	/* 目录项中路径名部分 */
+};
+
+
 //磁盘管理类
 class DiskMgr
 {
 public:
     const static int BLOCK_SIZE = 512;
-    const static int NSECTOR = 512;
+    const static int SBLK_NUM = 2;
+    const static int INODE_NUM = 16;
+    const static int DATA_NUM = 4096;
+
+    const static int NSECTOR = SBLK_NUM + INODE_NUM + DATA_NUM;
+    const static int DISK_SIZE = NSECTOR * BLOCK_SIZE;
+
+
 private:
     fstream *disk;
 
 public:
     DiskMgr();
     ~DiskMgr();
-    bool isOpen();
-    int devStart(Buf*);
+
+    bool isOpen();//是否打开了一个磁盘文件
     int openDisk(const char*); //打开虚拟磁盘文件
     int creatDisk(const char*); //新建一个空的虚拟磁盘文件
-    void closeDisk(); //关闭磁盘
+    int closeDisk(); //关闭当前磁盘文件
+
+    int devStart(Buf*);
+
     void read(int, byte*);  //将一个block读到缓存
     void write(int, byte*); //将一个block写回磁盘
 };

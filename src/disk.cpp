@@ -1,5 +1,32 @@
 #include "disk.h"
 
+template<int size>
+int Bitmap<size>::alloc()
+{
+    int blkno = 0;
+    for(unsigned int i = 0 ; i < size; ++i)
+    {
+        if(bitmap[i] == 0xffffffff)
+            blkno += sizeof(unsigned int) * 8;
+        else
+        {
+            int pos = sizeof(unsigned int) * 8 - nlz(bitmap[i]);
+            blkno += pos;
+            setBit(&bitmap[i], 0x01 << pos);
+            return blkno;
+        }
+    }
+    return -1; //没申请到
+}
+
+template<int size>
+void Bitmap<size>::release(int blkno)
+{
+    int index = blkno / sizeof(int);
+    int pos = blkno % sizeof(int);
+    clearBit(&bitmap[index], 0x01 << pos);
+}
+
 DiskMgr::DiskMgr()
 {
     disk = NULL;
@@ -26,34 +53,36 @@ int DiskMgr::openDisk(const char *file)
 
     if(disk->fail())
     {
-        printf("Error:加载虚拟磁盘失败!\n");
         return ERR;
     }
+
     return 0;
 }
-
 
 int DiskMgr::creatDisk(const char *file)
 {// 创建一个全0的空白磁盘
     fstream *tmp = new fstream();
     tmp->open(file, ios::out | ios::binary);
-
     if(tmp->fail())
     {
-        printf("Error:创建新磁盘失败!\n");
         return ERR;
     }
-    tmp->seekg(BLOCK_SIZE * NSECTOR - 1);
+
+    tmp->seekg(DISK_SIZE - 1);
     *tmp << '\0';
     tmp->close();
     return 0;
 }
 
-void DiskMgr::closeDisk()
+int DiskMgr::closeDisk()
 {
     if (disk)
+    {
+        disk->close();
         delete disk;
+    }
     disk = NULL;
+    return 0;
 }
 
 void DiskMgr::read(int blkno, byte *buffer)

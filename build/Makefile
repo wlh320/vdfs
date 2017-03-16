@@ -4,7 +4,7 @@ TARGET = ../bin
 SRC = ../src
 CXXFLAGS = -Wall -std=gnu++11 -O2 -fPIC -pipe -I$(SRC)
 
-vdfs : buffer.o disk.o vdfs.o shell.o main.o
+vdfs : buffer.o disk.o vdfs.o shell.o utils.o main.o
 	$(CXX) buffer.o disk.o vdfs.o shell.o main.o -o $@
 
 buffer.o : $(SRC)/buffer.cpp $(SRC)/buffer.h
@@ -20,6 +20,9 @@ shell.o : $(SRC)/shell.cpp $(SRC)/shell.h
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 main.o : $(SRC)/main.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+utils.o : $(SRC)/utils.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 install:

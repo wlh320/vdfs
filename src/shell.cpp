@@ -112,53 +112,6 @@ void Shell::executeCommand()
 ///              下面是shell内置命令的入口函数                    ///
 /////////////////////////////////////////////////////////////////
 
-// 挂载磁盘文件
-void Shell::do_load()
-{
-    if (argc == 0)
-    {
-        printf("Error: No disk file name!\n");
-    }
-    else
-    {
-        //先尝试打开
-        int res = vdfs->openDisk(this->args[0]);
-        if (res)
-        {
-            //打开不成功，创建并格式化一个新磁盘
-            printf("WARN: No such disk, we'll make one for you.\n");
-            vdfs->creatDisk(this->args[0]);
-            vdfs->mkfs();
-        }
-        strcpy(this->disk, this->args[0]);
-    }
-}
-
-// 卸载磁盘文件
-void Shell::do_eject()
-{
-    if(strcmp(this->disk, "No Disk"))
-    {
-        vdfs->closeDisk();
-        strcpy(this->disk, "No Disk");
-    }
-    else
-    {
-        printf("WARN: No disk is open!");
-    }
-}
-
-// 退出
-void Shell::do_exit()
-{
-    printf("Bye!\n");
-    // 保存修改
-    if (this->disk != NULL)
-    {
-
-    }
-    exit(0);
-}
 // 帮助
 void Shell::do_help()
 {
@@ -189,6 +142,54 @@ void Shell::do_help()
             printf("Usage: Command not found!\n");
         }
     }
+}
+
+// 挂载磁盘文件
+void Shell::do_load()
+{
+    if (argc == 0)
+    {
+        printf("Error: No disk file name!\n");
+    }
+    else
+    {
+        //先尝试打开
+        int res = vdfs->openDisk(this->args[0]);
+        if (res)
+        {
+            //打开不成功，创建并格式化一个新磁盘
+            printf("WARN: Load disk failed, we'll make one for you. :)\n");
+            vdfs->creatDisk(this->args[0]);
+            vdfs->mkfs();
+        }
+        strcpy(this->disk, this->args[0]);
+    }
+}
+
+// 卸载磁盘文件
+void Shell::do_eject()
+{
+    if(strcmp(this->disk, "No Disk"))
+    {
+        vdfs->closeDisk();
+        strcpy(this->disk, "No Disk");
+    }
+    else
+    {
+        printf("WARN: No disk is open!");
+    }
+}
+
+// 退出
+void Shell::do_exit()
+{
+    printf("Bye!\n");
+    // 保存修改
+    if (this->disk != NULL)
+    {
+        vdfs->closeDisk();
+    }
+    exit(0);
 }
 
 void Shell::do_ls()
