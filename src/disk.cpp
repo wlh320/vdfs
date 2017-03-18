@@ -10,7 +10,7 @@ int Bitmap<size>::alloc()
             blkno += sizeof(unsigned int) * 8;
         else
         {
-            int pos = sizeof(unsigned int) * 8 - nlz(bitmap[i]);
+            int pos = firstZeroPos(bitmap[i]);
             blkno += pos;
             setBit(&bitmap[i], 0x01 << pos);
             return blkno;
@@ -22,8 +22,8 @@ int Bitmap<size>::alloc()
 template<int size>
 void Bitmap<size>::release(int blkno)
 {
-    int index = blkno / sizeof(int);
-    int pos = blkno % sizeof(int);
+    int index = blkno / (sizeof(unsigned int) * 8);
+    int pos = blkno % (sizeof(unsigned int) * 8);
     clearBit(&bitmap[index], 0x01 << pos);
 }
 

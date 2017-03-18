@@ -12,19 +12,24 @@
 #include <fstream>
 using namespace std;
 
-/*                      磁盘分布信息
+/*                   VDFS磁盘分布信息
+ * ---------------------------------------------------------
+ *      | SuperBlock   : 半个扇区（合用0号）
+ * Info | InodeBitmap  : 半个扇区（合用0号）
+ *      | DataBitmap   : 一个扇区(1号）
+ * ---------------------------------------------------------
+ *      | Inodes       : 16个扇区(共128个Inode,128/8=16个扇区)
+ * Data |
+ *      | FileData     : 4096个扇区(大小 2M, 共 2*1024*1024/512=4096个扇区)
+ * ---------------------------------------------------------
  *
- * SuperBlock区： 2个扇区
- * Inode区：一个扇区8个Inode，共128个Inode,128/8=16个扇区
- * 数据区：大小 2M, 共 2*1024*1024/512 = 4096个扇区
- *
- * 0     1     2             18
+ * 0           1          2        18                4114
  * +---------------------------------------------------+
- * |           |              |                        |
- * | SuperBlock|   Inodes     |  Datas                 |
- * |           |              |                        |
+ * |SuperBlock |          |        |                   |
+ * |-----------|DataBitmap| Inodes |      Data         |
+ * |InodeBitmap|          |        |                   |
  * +---------------------------------------------------+
- *       2            16                 4096
+ *             2              16           4096
  */
 
 // SuperBlock 结构, 共 1024 bytes
@@ -34,10 +39,7 @@ struct SuperBlock
     int	s_fsize;        /* 盘块总数 */
 
     int	s_nfree;        /* 直接管理的空闲盘块数量 */
-    int	s_free[100];    /* 直接管理的空闲盘块索引表 */
-
     int	s_ninode;       /* 直接管理的空闲外存Inode数量 */
-    int	s_inode[100];   /* 直接管理的空闲外存Inode索引表 */
 
     int	s_flock;        /* 封锁空闲盘块索引表标志 */
     int	s_ilock;        /* 封锁空闲Inode表标志 */
@@ -45,7 +47,7 @@ struct SuperBlock
     int	s_fmod;         /* 内存中super block副本被修改标志，意味着需要更新外存对应的Super Block */
     int	s_ronly;        /* 本文件系统只能读出 */
     int	s_time;         /* 最近一次更新时间 */
-    int	padding[47];    /* 填充使SuperBlock块大小等于1024字节，占据2个扇区 */
+    int	padding[55];    /* 填充使SuperBlock块大小等于256字节，占据2个扇区 */
 };
 
 // Bitmap 定义
@@ -59,10 +61,8 @@ public:
     int alloc(); // 找到一个free的block
     void release(int blkno); //释放一个block
 };
-
 typedef Bitmap<128> BlockBitmap;
 typedef Bitmap<4> InodeBitmap;
-
 
 // 内存Inode
 class Inode
@@ -97,13 +97,6 @@ class DirectoryEntry
 public:
     static const int DIRSIZE = 28;	/* 目录项中路径部分的最大字符串长度 */
 
-    /* Functions */
-public:
-    /* Constructors */
-    DirectoryEntry();
-    /* Destructors */
-    ~DirectoryEntry();
-
     /* Members */
 public:
     int m_ino;		/* 目录项中Inode编号部分 */
@@ -122,7 +115,6 @@ public:
 
     const static int NSECTOR = SBLK_NUM + INODE_NUM + DATA_NUM;
     const static int DISK_SIZE = NSECTOR * BLOCK_SIZE;
-
 
 private:
     fstream *disk;
