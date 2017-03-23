@@ -8,14 +8,16 @@ SOURCES += main.cpp \
     disk.cpp \
     shell.cpp \
     vdfs.cpp \
-    utils.cpp
+    utils.cpp \
+    filesystem.cpp
 
 HEADERS += \
     buffer.h \
     disk.h \
     shell.h \
     vdfs.h \
-    utils.h
+    utils.h \
+    filesystem.h
 
 STATECHARTS +=
 

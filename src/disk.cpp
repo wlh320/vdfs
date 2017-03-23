@@ -1,32 +1,5 @@
 #include "disk.h"
 
-template<int size>
-int Bitmap<size>::alloc()
-{
-    int blkno = 0;
-    for(unsigned int i = 0 ; i < size; ++i)
-    {
-        if(bitmap[i] == 0xffffffff)
-            blkno += sizeof(unsigned int) * 8;
-        else
-        {
-            int pos = firstZeroPos(bitmap[i]);
-            blkno += pos;
-            setBit(&bitmap[i], 0x01 << pos);
-            return blkno;
-        }
-    }
-    return -1; //没申请到
-}
-
-template<int size>
-void Bitmap<size>::release(int blkno)
-{
-    int index = blkno / (sizeof(unsigned int) * 8);
-    int pos = blkno % (sizeof(unsigned int) * 8);
-    clearBit(&bitmap[index], 0x01 << pos);
-}
-
 DiskMgr::DiskMgr()
 {
     disk = NULL;
@@ -88,13 +61,13 @@ int DiskMgr::closeDisk()
 void DiskMgr::read(int blkno, byte *buffer)
 {
     disk->seekg(blkno*BLOCK_SIZE);
-    disk->read(buffer, BLOCK_SIZE);
+    disk->read((char *)buffer, BLOCK_SIZE);
 }
 
 void DiskMgr::write(int blkno, byte *buffer)
 {
     disk->seekg(blkno*BLOCK_SIZE);
-    disk->write(buffer, BLOCK_SIZE);
+    disk->write((char *)buffer, BLOCK_SIZE);
 }
 
 int DiskMgr::devStart(Buf* bp)

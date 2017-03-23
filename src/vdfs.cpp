@@ -14,7 +14,6 @@ VDFileSys::~VDFileSys()
 
 int VDFileSys::mkfs()
 {
-    SuperBlock sb;
     return 0;
 }
 

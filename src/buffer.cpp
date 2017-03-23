@@ -3,17 +3,39 @@
 
 int BufMgr::init()
 {
-    //Buf *bp;
     this->freelist.b_forw  = this->freelist.b_back  = &(this->freelist);
     this->freelist.av_forw = this->freelist.av_back = &(this->freelist);
 
+    Buf *bp;
     for(int i = 0; i < NBUF; ++i)
     {
-        //bp = &(this->m_Buf[i]);
+        bp = &(this->m_Buf[i]);
+        bp->b_dev = -1;
+        bp->b_addr = this->buffer[i];
+        // init nodev
+        bp->b_back = &(this->freelist);
+        bp->b_forw = this->freelist.av_forw;
+        this->freelist.b_forw->b_back = bp;
+        this->freelist.b_forw = bp;
+        // init free list
 
     }
-
     return 0;
+}
+
+Buf* BufMgr::getBlk(int blkno)
+{
+
+}
+
+Buf* BufMgr::bread(int blkno)
+{
+
+}
+
+void BufMgr::bwrite(Buf *bp)
+{
+
 }
 
 int BufMgr::strategy(Buf* bp)
@@ -74,5 +96,3 @@ int BufMgr::strategy(Buf* bp)
 
     return 0;	/* GCC likes it ! */
 }
-
-

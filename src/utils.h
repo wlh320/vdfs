@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-typedef char byte;
+typedef unsigned char byte;
 
 #define YES 0
 #define ERR 1
