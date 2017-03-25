@@ -8,24 +8,26 @@
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
 
+#include "buffer.h"
+
 /*                   VDFS磁盘分布信息
  * ---------------------------------------------------------
- *      | SuperBlock   : 半个扇区（合用0号）
- * Info | InodeBitmap  : 半个扇区（合用0号）
- *      | DataBitmap   : 一个扇区(1号）
+ *      | SB SuperBlock   : 一个扇区(0号)
+ * Info | IB InodeBitmap  : 一个扇区(1号)
+ *      | DB DataBitmap   : 一个扇区(2号)
  * ---------------------------------------------------------
- *      | Inodes       : 16个扇区(共128个Inode,128/8=16个扇区)
+ *      | Inodes       : 128个扇区(共1024个Inode,1024/8=128个扇区)
  * Data |
  *      | FileData     : 4096个扇区(大小 2M, 共 2*1024*1024/512=4096个扇区)
  * ---------------------------------------------------------
  *
- * 0           1          2        18                4114
+ * 0  1  2  3          131                            4227
  * +---------------------------------------------------+
- * |SuperBlock |          |        |                   |
- * |-----------|DataBitmap| Inodes |      Data         |
- * |InodeBitmap|          |        |                   |
+ * |  |  |  |           |                              |
+ * |SB|IB|DB|  Inodes   |           Data               |
+ * |  |  |  |           |                              |
  * +---------------------------------------------------+
- *             2              16           4096
+ *  1  1  1     128                 4096
  */
 
 // SuperBlock 结构, 共 1024 bytes
@@ -43,22 +45,24 @@ struct SuperBlock
     int	s_fmod;         /* 内存中super block副本被修改标志，意味着需要更新外存对应的Super Block */
     int	s_ronly;        /* 本文件系统只能读出 */
     int	s_time;         /* 最近一次更新时间 */
-    int	padding[55];    /* 填充使SuperBlock块大小等于256字节，占据2个扇区 */
+    int	padding[119];    /* 填充使SuperBlock块大小等于256字节，占据2个扇区 */
 };
 
 // Bitmap 定义
-template<int size>
+template<int bits>
 class Bitmap
 {
+public:
+    static const int BMPSIZE = bits / 32;
 private:
-    unsigned int bitmap[size];
+    unsigned int bitmap[BMPSIZE];
 public:
     Bitmap(){memset(bitmap, 0x0, sizeof(bitmap));}
     int alloc(); // 找到一个free的block
     void release(int blkno); //释放一个block
 };
-typedef Bitmap<128> DataBitmap;
-typedef Bitmap<4> InodeBitmap;
+typedef Bitmap<4096> DataBitmap;
+typedef Bitmap<128> InodeBitmap;
 
 
 // 内存Inode
@@ -120,6 +124,9 @@ public:
 
 public:
     Inode();
+    void iupdate(int time); //更新inode
+    int bmap(int lbn); //由逻辑块号转换为物理块号
+
 };
 
 // 外存 Inode 结构, 一个 64 bytes, 一块有8个
@@ -136,6 +143,8 @@ struct DiskInode
 
     int     d_atime;        /* 最后访问时间 */
     int     d_mtime;        /* 最后修改时间 */
+
+    DiskInode();
 };
 
 // 目录项结构
@@ -151,19 +160,19 @@ public:
 class FileSystem
 {
 public:
-static const int SUPER_BLOCK_START = 0;
-static const int ROOTINO = 0;			/* 文件系统根目录外存Inode编号 */
+    static const int SUPER_BLOCK_START = 0;
+    static const int ROOTINO = 0;			/* 文件系统根目录外存Inode编号 */
 
-static const int INODE_BITMAP_START = 0;
-static const int DATA_BITMAP_START = 1;
+    static const int INODE_BITMAP_START = 1;
+    static const int DATA_BITMAP_START = 2;
 
-static const int INODE_NUMBER_PER_SECTOR = 8; /* 外存INode对象长度为64字节，每个磁盘块可以存放512/64 = 8个外存Inode */
-static const int INODE_ZONE_START = 2; /* 外存Inode区位于磁盘上的起始扇区号 */
-static const int INODE_ZONE_SIZE = 16; /* 磁盘上外存Inode区占据的扇区数 */
+    static const int INODE_NUMBER_PER_SECTOR = 8; /* 外存INode对象长度为64字节，每个磁盘块可以存放512/64 = 8个外存Inode */
+    static const int INODE_ZONE_START = 3; /* 外存Inode区位于磁盘上的起始扇区号 */
+    static const int INODE_ZONE_SIZE = 128; /* 磁盘上外存Inode区占据的扇区数 */
 
-static const int DATA_ZONE_START = 18; /* 数据区的起始扇区号 */
-static const int DATA_ZONE_END = 4114; /* 数据区的结束扇区号 */
-static const int DATA_ZONE_SIZE = 4096;	/* 数据区占据的扇区数量 */
+    static const int DATA_ZONE_START = 131; /* 数据区的起始扇区号 */
+    static const int DATA_ZONE_SIZE = 4096;	/* 数据区占据的扇区数量 */
+    static const int DATA_ZONE_END = DATA_ZONE_START + DATA_ZONE_SIZE; /* 数据区的结束扇区号 */
 
 private:
     SuperBlock *sb;
@@ -171,13 +180,13 @@ private:
     InodeBitmap *ibmp;
     DataBitmap  *dbmp;
 
-
 public:
-    void mkfs();   //格式化磁盘
-    void ialloc(); //分配Inode
-    void dalloc();  //分配数据block
+    void init();
+    void mkfs();    //格式化磁盘
+    Inode* ialloc();  //分配Inode
+    Buf* dalloc();  //分配数据块
     void ifree(int blkno);  //释放Inode
-    void dfree(int blkno);   //释放数据块
+    void dfree(int blkno);  //释放数据块
 
     void update();  //将修改写入磁盘
 };

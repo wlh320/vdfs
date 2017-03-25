@@ -53,10 +53,10 @@ private:
     Buf m_Buf[NBUF];					/* 缓存控制块数组 */
     unsigned char buffer[NBUF][BUFFER_SIZE];	/* 缓冲区数组 */
 
-    Buf* d_actf; // I/O请求队列
-    Buf* d_actl; // I/O请求队列
+    Buf* d_actf; // I/O请求队列队首
+    Buf* d_actl; // I/O请求队列队尾
 
-    Buf freelist; //空闲队列
+    Buf freelist; //自由缓存队列头结点
 
 public:
 
@@ -64,9 +64,9 @@ public:
     Buf* getBlk(int blkno); //申请一块缓存
     Buf* bread(int blkno);  //读入缓存
     void bwrite(Buf *bp);   //缓存写入硬盘
+    void brelse(Buf *bp);   //释放缓存
 
     int strategy(Buf* bp);  //调度
-
 };
 
 #endif // BUFFER_H

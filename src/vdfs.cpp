@@ -1,15 +1,43 @@
 #include "vdfs.h"
 
+
+//////////////////////////////////////////
+// !!!全局单例变量
+BufMgr g_bufmgr;
+DiskMgr g_dskmgr;
+FileSystem g_fsys;
+VDFileSys VDFileSys::instance;
+//////////////////////////////////////////
+
 VDFileSys::VDFileSys()
 {
-    bufmgr = new BufMgr();
-    dskmgr = new DiskMgr();
+    this->bufmgr = &g_bufmgr;
+    this->dskmgr = &g_dskmgr;
+    this->fsys   = &g_fsys;
 }
 
 VDFileSys::~VDFileSys()
 {
-    delete bufmgr;
-    delete dskmgr;
+}
+
+VDFileSys& VDFileSys::getInstance()
+{
+    return VDFileSys::instance;
+}
+
+BufMgr& VDFileSys::getBufMgr()
+{
+    return *(this->bufmgr);
+}
+
+DiskMgr& VDFileSys::getDiskMgr()
+{
+    return *(this->dskmgr);
+}
+
+FileSystem& VDFileSys::getFileSystem()
+{
+    return *(this->fsys);
 }
 
 int VDFileSys::mkfs()

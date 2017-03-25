@@ -1,4 +1,5 @@
 #include "shell.h"
+#include "utils.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -26,8 +27,6 @@ Shell::Shell()
     this->command = NULL;
     this->args = new char*[ARG_MAX];
     this->argc = 0;
-
-    this->vdfs = new VDFileSys();
 
     printf("Welcome to VDFS(Virtual Disk File System) shell 1.0\n");
     printf("Type \"help\" for more information. Type \"exit\" to quit.\n\n");
@@ -103,7 +102,7 @@ void Shell::executeCommand()
     }
     if (cte[i].call == NULL)
     {
-        printf("shell: Command not found!\n");
+        printErr("Command not found");
     }
     printf("\n");
 }
@@ -149,18 +148,18 @@ void Shell::do_load()
 {
     if (argc == 0)
     {
-        printf("Error: No disk file name!\n");
+        printErr("No disk file name");
     }
     else
     {
         //先尝试打开
-        int res = vdfs->openDisk(this->args[0]);
+        int res = VDFileSys::getInstance().openDisk(this->args[0]);
         if (res)
         {
             //打开不成功，创建并格式化一个新磁盘
             printf("WARN: Load disk failed, we'll make one for you. :)\n");
-            vdfs->creatDisk(this->args[0]);
-            vdfs->mkfs();
+            VDFileSys::getInstance().creatDisk(this->args[0]);
+            VDFileSys::getInstance().mkfs();
         }
         strcpy(this->disk, this->args[0]);
     }
@@ -171,7 +170,7 @@ void Shell::do_eject()
 {
     if(strcmp(this->disk, "No Disk"))
     {
-        vdfs->closeDisk();
+        VDFileSys::getInstance().closeDisk();
         strcpy(this->disk, "No Disk");
     }
     else
@@ -187,7 +186,7 @@ void Shell::do_exit()
     // 保存修改
     if (this->disk != NULL)
     {
-        vdfs->closeDisk();
+        VDFileSys::getInstance().closeDisk();
     }
     exit(0);
 }

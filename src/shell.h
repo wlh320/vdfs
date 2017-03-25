@@ -38,8 +38,6 @@ private:
     char **args;    // Arguments array 参数数组
     int  argc;      // Arguments Count 参数个数
 
-    VDFileSys *vdfs;
-
     static CmdTblEntry cte[CTE_MAX]; //Built-in Command Entry Table
 
 public:

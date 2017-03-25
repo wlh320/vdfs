@@ -17,11 +17,8 @@ class DiskMgr
 {
 public:
     const static int BLOCK_SIZE = 512;
-    const static int SBLK_NUM = 2;
-    const static int INODE_NUM = 16;
-    const static int DATA_NUM = 4096;
+    const static int NSECTOR = 3 + 128 + 4096;
 
-    const static int NSECTOR = SBLK_NUM + INODE_NUM + DATA_NUM;
     const static int DISK_SIZE = NSECTOR * BLOCK_SIZE;
 
 private:

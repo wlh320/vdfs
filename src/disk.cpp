@@ -74,7 +74,7 @@ int DiskMgr::devStart(Buf* bp)
 {
     if (!disk->is_open())
     {
-        printf("Error:没有虚拟磁盘!\n");
+        printErr("没有虚拟磁盘");
         return 0;
     }
 

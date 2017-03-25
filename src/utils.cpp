@@ -1,4 +1,6 @@
 #include <cstdint>
+#include <cstdio>
+#include "utils.h"
 
 //set bitPostion in value to 1
 void setBit(unsigned int* value, int bitPosition)
@@ -24,4 +26,22 @@ int firstZeroPos(unsigned int x)
 
     x = ~x;
     return MultiplyDeBruijnBitPosition[((uint32_t)((x & -x) * 0x077CB531U)) >> 27];
+}
+
+void printErr(const char *msg)
+{
+    printf("Error: %s !\n", msg);
+}
+
+void printWarn(const char *msg)
+{
+    printf("Warning: %s !\n", msg);
+}
+
+void IOMove(byte *from, byte *to, int count)
+{
+    while(count--)
+        *to++ = *from++;
+
+    return;
 }

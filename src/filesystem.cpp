@@ -1,9 +1,12 @@
 #include "filesystem.h"
-template<int size>
-int Bitmap<size>::alloc()
+#include "utils.h"
+
+//////////// Bitmap 模板类实现 ///////////////
+template<int bits>
+int Bitmap<bits>::alloc()
 {
     int blkno = 0;
-    for(unsigned int i = 0 ; i < size; ++i)
+    for(unsigned int i = 0 ; i < BMPSIZE; ++i)
     {
         if(bitmap[i] == 0xffffffff)
             blkno += sizeof(unsigned int) * 8;
@@ -18,14 +21,15 @@ int Bitmap<size>::alloc()
     return -1; //没申请到
 }
 
-template<int size>
-void Bitmap<size>::release(int blkno)
+template<int bits>
+void Bitmap<bits>::release(int blkno)
 {
     int index = blkno / (sizeof(unsigned int) * 8);
     int pos = blkno % (sizeof(unsigned int) * 8);
     clearBit(&bitmap[index], 0x01 << pos);
 }
 
+//////////// Inode 类 ///////////////
 Inode::Inode()
 {
     this->i_flag = 0;
@@ -44,3 +48,66 @@ Inode::Inode()
     }
 }
 
+
+////////////FileSystem 类///////////////
+
+void FileSystem::init()
+{
+
+}
+
+void FileSystem::mkfs()
+{
+
+}
+
+Inode* FileSystem::ialloc()
+{
+
+}
+
+Buf* FileSystem::dalloc()
+{
+
+}
+
+void FileSystem::ifree(int blkno)
+{
+    if(sb->s_flock)
+        return ;
+
+    ibmp->release(blkno - INODE_ZONE_START);
+
+    sb->s_fmod = 1;
+}
+
+void FileSystem::dfree(int blkno)
+{
+    if(sb->s_flock)
+        return ;
+
+    dbmp->release(blkno - DATA_ZONE_START);
+
+    sb->s_fmod = 1;
+}
+
+void FileSystem::update()
+{
+
+}
+
+//////////// DiskInode ///////////////
+DiskInode::DiskInode()
+{
+    this->d_mode = 0;
+    this->d_nlink = 0;
+    this->d_uid = -1;
+    this->d_gid = -1;
+    this->d_size = 0;
+    for(int i = 0; i < 10; i++)
+    {
+        this->d_addr[i] = 0;
+    }
+    this->d_atime = 0;
+    this->d_mtime = 0;
+}
