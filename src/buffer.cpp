@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "disk.h"
-
+#include "vdfs.h"
+#include <cstring>
 int BufMgr::init()
 {
     this->freelist.b_forw  = this->freelist.b_back  = &(this->freelist);
@@ -10,6 +11,7 @@ int BufMgr::init()
     for(int i = 0; i < NBUF; ++i)
     {
         bp = &(this->m_Buf[i]);
+        memset(buffer[i], 0, BUFFER_SIZE);
         bp->b_dev = -1;
         bp->b_addr = this->buffer[i];
         // init nodev
@@ -87,6 +89,8 @@ void BufMgr::bwrite(Buf *bp)
     bp->b_flags &= ~(Buf::B_READ | Buf::B_DONE | Buf::B_ERROR | Buf::B_DELWRI);
     bp->b_wcount = BufMgr::BUFFER_SIZE;		/* 512字节 */
 
+    bp->b_flags |= Buf::B_WRITE;
+
     this->strategy(bp);
 
     if( (flags & Buf::B_ASYNC) == 0 )
@@ -106,6 +110,12 @@ void BufMgr::brelse(Buf *bp)
     bp->av_back = this->freelist.av_back;
     bp->av_forw = &(this->freelist);
     this->freelist.av_back = bp;
+}
+
+void BufMgr::bclear(Buf *bp)
+{
+    byte *bc = bp->b_addr;
+    memset(bc, 0, BUFFER_SIZE);
 }
 
 int BufMgr::strategy(Buf* bp)
@@ -150,13 +160,12 @@ int BufMgr::strategy(Buf* bp)
      * 表I/O请求队列中的下一个I/O请求。
      */
 
-
-    //Buf* bp;
-    /* 如果I/O请求队列为空，则立即返回 */
-    if( (bp = this->d_actf) == NULL )
+    if(d_actf == NULL)
         return 0;
 
     /* 设置磁盘寄存器，启动I/O操作 */
+    DiskMgr *dm = VDFileSys::getInstance().getDiskMgr();
+    dm->devStart(bp);
     //DiskMgr::devStart(bp);
 
     //X86Assembly::STI();

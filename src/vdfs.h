@@ -28,9 +28,9 @@ public:
     static VDFileSys& getInstance();
 
     //获取全局变量
-    BufMgr& getBufMgr();
-    DiskMgr& getDiskMgr();
-    FileSystem& getFileSystem();
+    BufMgr* getBufMgr();
+    DiskMgr* getDiskMgr();
+    FileSystem* getFileSystem();
 
     //功能接口
     int openDisk(char*);

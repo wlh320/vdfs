@@ -59,12 +59,12 @@ private:
     Buf freelist; //自由缓存队列头结点
 
 public:
-
     int  init();            //初始化
     Buf* getBlk(int blkno); //申请一块缓存
     Buf* bread(int blkno);  //读入缓存
     void bwrite(Buf *bp);   //缓存写入硬盘
     void brelse(Buf *bp);   //释放缓存
+    void bclear(Buf *bp);   //清空缓存块
 
     int strategy(Buf* bp);  //调度
 };

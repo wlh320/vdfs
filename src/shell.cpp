@@ -154,11 +154,13 @@ void Shell::do_load()
     {
         //先尝试打开
         int res = VDFileSys::getInstance().openDisk(this->args[0]);
-        if (res)
+        VDFileSys::getInstance().mkfs();
+        if (res == ERR)
         {
             //打开不成功，创建并格式化一个新磁盘
             printf("WARN: Load disk failed, we'll make one for you. :)\n");
             VDFileSys::getInstance().creatDisk(this->args[0]);
+            VDFileSys::getInstance().openDisk(this->args[0]);
             VDFileSys::getInstance().mkfs();
         }
         strcpy(this->disk, this->args[0]);

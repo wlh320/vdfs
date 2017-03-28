@@ -3,17 +3,16 @@
 
 //////////////////////////////////////////
 // !!!全局单例变量
-BufMgr g_bufmgr;
-DiskMgr g_dskmgr;
-FileSystem g_fsys;
 VDFileSys VDFileSys::instance;
 //////////////////////////////////////////
 
 VDFileSys::VDFileSys()
 {
-    this->bufmgr = &g_bufmgr;
-    this->dskmgr = &g_dskmgr;
-    this->fsys   = &g_fsys;
+    this->bufmgr = new BufMgr();
+    this->dskmgr = new DiskMgr();
+    this->fsys   = new FileSystem();
+
+    bufmgr->init();
 }
 
 VDFileSys::~VDFileSys()
@@ -25,23 +24,24 @@ VDFileSys& VDFileSys::getInstance()
     return VDFileSys::instance;
 }
 
-BufMgr& VDFileSys::getBufMgr()
+BufMgr* VDFileSys::getBufMgr()
 {
-    return *(this->bufmgr);
+    return this->bufmgr;
 }
 
-DiskMgr& VDFileSys::getDiskMgr()
+DiskMgr* VDFileSys::getDiskMgr()
 {
-    return *(this->dskmgr);
+    return this->dskmgr;
 }
 
-FileSystem& VDFileSys::getFileSystem()
+FileSystem* VDFileSys::getFileSystem()
 {
-    return *(this->fsys);
+    return this->fsys;
 }
 
 int VDFileSys::mkfs()
 {
+    fsys->mkfs();
     return 0;
 }
 

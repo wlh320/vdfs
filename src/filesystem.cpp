@@ -1,4 +1,5 @@
 #include "filesystem.h"
+#include "vdfs.h"
 #include "utils.h"
 
 //////////// Bitmap 模板类实现 ///////////////
@@ -53,12 +54,11 @@ Inode::Inode()
 
 void FileSystem::init()
 {
-
 }
 
 void FileSystem::mkfs()
 {
-
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
 }
 
 Inode* FileSystem::ialloc()
