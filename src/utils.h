@@ -14,9 +14,9 @@ typedef unsigned char byte;
 #define ERR 1
 
 // bitmap functions
-void setBit(unsigned int* value, int bitPosition);
-void clearBit(unsigned int* value, int bitPosition);
-int firstZeroPos(unsigned int x);
+void setBit0(unsigned int* value, int bitPosition);
+void setBit1(unsigned int* value, int bitPosition);
+int firstOnePos(unsigned int x);
 
 // 出错提示
 void printErr(const char *msg);
@@ -24,5 +24,8 @@ void printWarn(const char *msg);
 
 // 复制
 void IOMove(byte *from, byte *to, int count);
+
+// 时间
+int getTime();
 
 #endif //UTILS_H

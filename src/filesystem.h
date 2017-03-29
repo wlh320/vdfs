@@ -46,6 +46,8 @@ struct SuperBlock
     int	s_ronly;        /* 本文件系统只能读出 */
     int	s_time;         /* 最近一次更新时间 */
     int	padding[119];    /* 填充使SuperBlock块大小等于256字节，占据2个扇区 */
+
+    SuperBlock();
 };
 
 // Bitmap 定义
@@ -57,7 +59,7 @@ public:
 private:
     unsigned int bitmap[BMPSIZE];
 public:
-    Bitmap(){memset(bitmap, 0x0, sizeof(bitmap));}
+    Bitmap();
     int alloc(); // 找到一个free的block
     void release(int blkno); //释放一个block
 };
@@ -182,12 +184,13 @@ private:
 
 public:
     void init();
-    void mkfs();    //格式化磁盘
+
     Inode* ialloc();  //分配Inode
     Buf* dalloc();  //分配数据块
     void ifree(int blkno);  //释放Inode
     void dfree(int blkno);  //释放数据块
 
+    void mkfs();    //格式化磁盘
     void update();  //将修改写入磁盘
 };
 

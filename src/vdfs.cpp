@@ -13,6 +13,7 @@ VDFileSys::VDFileSys()
     this->fsys   = new FileSystem();
 
     bufmgr->init();
+    fsys->init();
 }
 
 VDFileSys::~VDFileSys()

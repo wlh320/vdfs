@@ -7,11 +7,11 @@ DiskMgr::DiskMgr()
 
 DiskMgr::~DiskMgr()
 {
-//    if (disk != NULL)
-//    {
-//        disk->close();
-//        //delete disk;
-//    }
+    if (disk != NULL)
+    {
+        disk->close();
+        //delete disk;
+    }
 }
 
 bool DiskMgr::isOpen()

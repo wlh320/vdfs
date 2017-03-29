@@ -1,22 +1,23 @@
 #include <cstdint>
 #include <cstdio>
+#include <ctime>
 #include "utils.h"
 
 //set bitPostion in value to 1
-void setBit(unsigned int* value, int bitPosition)
+void setBit1(unsigned int* value, int bitPosition)
 {
     *value |= bitPosition;
 }
 
 //set bitPostion in value to 0
-void clearBit(unsigned int* value, int bitPosition)
+void setBit0(unsigned int* value, int bitPosition)
 {
     *value &= ~(bitPosition);
 }
 
-// 奇技淫巧返回第一个为0的位置
+// 奇技淫巧返回第一个为1的位置
 // http://www.matrix67.com/blog/archives/3985
-int firstZeroPos(unsigned int x)
+int firstOnePos(unsigned int x)
 {
     static const int MultiplyDeBruijnBitPosition[32] =
     {
@@ -42,6 +43,15 @@ void IOMove(byte *from, byte *to, int count)
 {
     while(count--)
         *to++ = *from++;
+}
 
-    return;
+int getTime()
+{
+    return std::time(nullptr);
+}
+
+int* copyright()
+{
+    const char str[100] = {119, 108, 104, 39, 115, 32, 119, 111, 114, 107};
+    return (int*)str;
 }
