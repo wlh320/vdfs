@@ -2,7 +2,7 @@
  * Project     : Unix-style Virtual Disk File System
  * Author      : wlh
  * Date        : 2017/01/30
- * Description : 磁盘相关
+ * Description : 磁盘相关类
  */
 
 #ifndef DISK_H

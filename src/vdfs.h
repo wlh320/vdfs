@@ -11,15 +11,23 @@
 #include "buffer.h"
 #include "disk.h"
 #include "filesystem.h"
+#include "inode.h"
+#include "file.h"
 
 // Virtual Disk File System
 class VDFileSys
 {
 private:
+    //模块管理
     static VDFileSys instance;
     BufMgr *bufmgr;
     DiskMgr *dskmgr;
     FileSystem *fsys;
+
+    //读写变量
+    byte *base; //读写目标区域
+    int offset;//当前读写文件的偏移
+    int count; //当前剩余读写字节
 
 public:
     VDFileSys();

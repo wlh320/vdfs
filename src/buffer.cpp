@@ -102,6 +102,13 @@ void BufMgr::bwrite(Buf *bp)
     return;
 }
 
+void BufMgr::bdwrite(Buf *bp)
+{
+    bp->b_flags |= (Buf::B_DELWRI | Buf::B_DONE);
+    this->brelse(bp);
+    return;
+}
+
 // 释放:缓存进入自由缓存队列队尾
 void BufMgr::brelse(Buf *bp)
 {

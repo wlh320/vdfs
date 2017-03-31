@@ -9,7 +9,9 @@ SOURCES += main.cpp \
     shell.cpp \
     vdfs.cpp \
     utils.cpp \
-    filesystem.cpp
+    filesystem.cpp \
+    inode.cpp \
+    file.cpp
 
 HEADERS += \
     buffer.h \
@@ -17,7 +19,9 @@ HEADERS += \
     shell.h \
     vdfs.h \
     utils.h \
-    filesystem.h
+    filesystem.h \
+    inode.h \
+    file.h
 
 STATECHARTS +=
 

@@ -2,7 +2,7 @@
  * Project     : Unix-style Virtual Disk File System
  * Author      : wlh
  * Date        : 2017/01/30
- * Description : 缓存相关
+ * Description : 缓存相关的类实现
  */
 
 #ifndef BUFFER_H
@@ -65,6 +65,7 @@ public:
     void bwrite(Buf *bp);   //缓存写入硬盘
     void brelse(Buf *bp);   //释放缓存
     void bclear(Buf *bp);   //清空缓存块
+    void bdwrite(Buf *bp);  //延迟写
 
     int strategy(Buf* bp);  //调度
 };
