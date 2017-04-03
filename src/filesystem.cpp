@@ -76,10 +76,12 @@ void FileSystem::mkfs()
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
     // init Inode table
+
 }
 
 Inode* FileSystem::ialloc()
 {
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     return NULL;
 }
 

@@ -1,5 +1,6 @@
 #include "inode.h"
 #include "vdfs.h"
+#include "utils.h"
 //////////// DiskInode ///////////////
 DiskInode::DiskInode()
 {
@@ -148,12 +149,100 @@ int Inode::bmap(int lbn)
 
 void Inode::readi()
 {
+    BufMgr  *bufmgr = VDFileSys::getInstance().getBufMgr();
+    FileMgr *fmgr   = VDFileSys::getInstance().getFileMgr();
 
+    if(fmgr->count == 0)
+        return ;
+    this->i_flag |= Inode::IACC;
+
+    int lbn, bn;
+    int offset;
+    while(fmgr->count != 0)
+    {
+        lbn = bn = fmgr->offset / Inode::BLOCK_SIZE;
+        offset = fmgr->offset % Inode::BLOCK_SIZE;
+        int nbytes = min(Inode::BLOCK_SIZE - offset, fmgr->count);
+
+        int remain = this->i_size - fmgr->offset;
+        /* 如果已读到超过文件结尾 */
+        if( remain <= 0)
+            return;
+
+        /* 传送的字节数量还取决于剩余文件的长度 */
+        nbytes = min(nbytes, remain);
+        if( (bn = this->bmap(lbn)) == 0 )
+            return;
+
+        Buf *bp = bufmgr->bread(bn);
+        unsigned char* start = bp->b_addr + offset;
+
+        IOMove(start, fmgr->base, nbytes);
+
+        fmgr->base   += nbytes;
+        fmgr->offset += nbytes;
+        fmgr->count  -= nbytes;
+
+        bufmgr->brelse(bp);
+    }
 }
 
 void Inode::writei()
 {
+    BufMgr  *bufmgr = VDFileSys::getInstance().getBufMgr();
+    FileMgr *fmgr   = VDFileSys::getInstance().getFileMgr();
+    this->i_flag |= (Inode::IACC | Inode::IUPD);
+    if( 0 == fmgr->count)
+        return;
 
+    int lbn,bn;
+    int offset;
+    Buf *bp;
+    while(fmgr->count != 0)
+    {
+        lbn = bn = fmgr->offset / Inode::BLOCK_SIZE;
+        offset = fmgr->offset % Inode::BLOCK_SIZE;
+        int nbytes = min(Inode::BLOCK_SIZE - offset, fmgr->count);
+        if( (bn = this->bmap(lbn)) == 0 )
+            return;
+        if(Inode::BLOCK_SIZE == nbytes)
+        {
+            /* 如果写入数据正好满一个字符块，则为其分配缓存 */
+            bp = bufmgr->getBlk(bn);
+        }
+        else
+        {
+            /* 写入数据不满一个字符块，先读后写（读出该字符块以保护不需要重写的数据） */
+            bp = bufmgr->bread(bn);
+        }
+        /* 缓存中数据的起始写位置 */
+        byte* start = bp->b_addr + offset;
+
+        /* 写操作: 从用户目标区拷贝数据到缓冲区 */
+        IOMove(fmgr->base, start, nbytes);
+
+        fmgr->base   += nbytes;
+        fmgr->count  -= nbytes;
+        fmgr->offset += nbytes;
+
+        if( (fmgr->offset % Inode::BLOCK_SIZE) == 0 )	/* 如果写满一个字符块 */
+        {
+            /* 以异步方式将字符块写入磁盘，进程不需等待I/O操作结束，可以继续往下执行 */
+            //bufMgr.Bawrite(pBuf);
+            bufmgr->bwrite(bp);
+        }
+        else /* 如果缓冲区未写满 */
+        {
+            /* 将缓存标记为延迟写，不急于进行I/O操作将字符块输出到磁盘上 */
+            bufmgr->bdwrite(bp);
+        }
+        /* 普通文件长度增加 */
+        if( (this->i_size < fmgr->offset) && (this->i_mode & (Inode::IFBLK & Inode::IFCHR)) == 0 )
+        {
+            this->i_size = fmgr->offset;
+        }
+        this->i_flag |= Inode::IUPD;
+    }
 }
 
 void Inode::iupdate(int time)
@@ -186,4 +275,116 @@ void Inode::iupdate(int time)
         /* 将缓存写回至磁盘，达到更新旧外存Inode的目的 */
         bufmgr->bwrite(bp);
     }
+}
+
+void Inode::icopy(Buf *bp, int inumber)
+{
+    DiskInode *di = new DiskInode();
+    byte *p = bp->b_addr + (inumber % FileSystem::INODE_NUMBER_PER_SECTOR) * sizeof(DiskInode);
+    IOMove(p, (byte*)di, sizeof(DiskInode));
+    /* 将外存Inode变量dInode中信息复制到内存Inode中 */
+    this->i_mode = di->d_mode;
+    this->i_nlink = di->d_nlink;
+    this->i_uid = di->d_uid;
+    this->i_gid = di->d_gid;
+    this->i_size = di->d_size;
+    for(int i = 0; i < 10; i++)
+    {
+        this->i_addr[i] = di->d_addr[i];
+    }
+    delete di;
+}
+
+void Inode::iclear()
+{
+    this->i_mode = 0;
+    //this->i_count = 0;
+    this->i_nlink = 0;
+    //this->i_dev = -1;
+    //this->i_number = -1;
+    this->i_uid = -1;
+    this->i_gid = -1;
+    this->i_size = 0;
+    this->i_lastr = -1;
+    for(int i = 0; i < 10; i++)
+    {
+        this->i_addr[i] = 0;
+    }
+}
+
+void Inode::itrunc()
+{
+
+}
+
+//////////// Inode Table ///////////////
+Inode* InodeTable::getFreeInode()
+{
+    for(int i = 0; i < NINODE; ++i)
+        if (inode[i].i_count == 0)
+            return &(this->inode[i]);
+    return NULL;
+}
+
+bool InodeTable::isLoaded(int inumber)
+{
+    for(int i = 0; i < NINODE; ++i)
+        if (this->inode[i].i_count != 0 && this->inode[i].i_number == inumber)
+            return i;
+    return -1;
+}
+
+void InodeTable::update()
+{
+    for(int i = 0; i < NINODE; ++i)
+        if (this->inode[i].i_count != 0)
+            inode[i].iupdate(getTime());
+}
+
+void InodeTable::iget(int inumber)
+{
+    Inode *pInode;
+    int index = isLoaded(inumber);
+    if (index >= 0)
+    {
+        pInode = &(this->inode[index]);
+        pInode->i_count++;
+    }
+    else
+    {
+        pInode = getFreeInode();
+        if(pInode == NULL) //获取失败
+        {
+            printErr("Inode table is full");
+            return;
+        }
+        else
+        {
+            pInode->i_number = inumber;
+            pInode->i_count++;
+            BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
+            Buf *bp = bufmgr->bread(FileSystem::INODE_ZONE_START+ inumber / FileSystem::INODE_NUMBER_PER_SECTOR );
+            pInode->icopy(bp, inumber);
+            bufmgr->brelse(bp);
+        }
+    }
+}
+
+void InodeTable::iput(Inode *pInode)
+{
+    if(pInode->i_count == 1)
+    {
+        if(pInode->i_nlink <= 0)
+        {
+            pInode->itrunc();
+            pInode->i_mode = 0;
+        }
+        /* 更新外存Inode信息 */
+        pInode->iupdate(getTime());
+
+        /* 清除内存Inode的所有标志位 */
+        pInode->i_flag = 0;
+        pInode->i_number = -1;
+    }
+    pInode->i_count--;
 }

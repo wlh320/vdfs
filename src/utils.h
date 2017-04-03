@@ -28,4 +28,7 @@ void IOMove(byte *from, byte *to, int count);
 // 时间
 int getTime();
 
+// 最小
+int min(int a, int b);
+
 #endif //UTILS_H

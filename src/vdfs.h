@@ -22,12 +22,8 @@ private:
     static VDFileSys instance;
     BufMgr *bufmgr;
     DiskMgr *dskmgr;
+    FileMgr *flmgr;
     FileSystem *fsys;
-
-    //读写变量
-    byte *base; //读写目标区域
-    int offset;//当前读写文件的偏移
-    int count; //当前剩余读写字节
 
 public:
     VDFileSys();
@@ -39,14 +35,19 @@ public:
     BufMgr* getBufMgr();
     DiskMgr* getDiskMgr();
     FileSystem* getFileSystem();
+    FileMgr* getFileMgr();
 
     //功能接口
-    int openDisk(char*);
-    int creatDisk(char*);
-    int closeDisk();
+    int openDisk(char*); // 加载磁盘
+    int creatDisk(char*); // 创建磁盘
+    int closeDisk();    // 卸载磁盘
 
     int mkfs(); //格式化磁盘
-    void ls();  //list
+    void ls();  //列目录
+    void cd(const char* vpath); // 修改路径
+    void save(const char* rpath, const char* vpath); // 保存文件到虚拟磁盘
+    void load(const char* vpath, const char* rpath); // 从虚拟磁盘读取文件
+    void rm(const char* vpath); // 删除文件
 };
 
 #endif // VDFS_H

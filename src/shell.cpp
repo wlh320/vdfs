@@ -10,10 +10,13 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     //命令      入口函数           命令功能描述              命令帮助信息
     { "exit",  &Shell::do_exit,  "保存所有更改并退出shell", "exit" },
     { "help",  &Shell::do_help,  "打印命令帮助信息",        "help [命令]" },
+    { "mount",  &Shell::do_mount,  "加载虚拟磁盘文件",        "load 磁盘文件路径"},
+    { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
     { "ls",    &Shell::do_ls,    "列出路径下的文件",        "ls [路径]" },
     { "cd",    &Shell::do_cd,    "修改当前路径",           "cd 路径" },
-    { "load",  &Shell::do_load,  "加载虚拟磁盘文件",        "load 磁盘文件路径"},
-    { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
+    { "save",  &Shell::do_save,  "将文件保存至虚拟磁盘",     "save 实际路径 虚拟路径"},
+    { "load",  &Shell::do_load,  "将文件从虚拟磁盘中取出",   "load 虚拟路径 实际路径"},
+    { "rm",    &Shell::do_rm,    "将文件从虚拟磁盘中删除",   "rm 虚拟路径"},
     { NULL,   NULL,            NULL,                   NULL }
 };
 
@@ -144,7 +147,7 @@ void Shell::do_help()
 }
 
 // 挂载磁盘文件
-void Shell::do_load()
+void Shell::do_mount()
 {
     if (argc == 0)
     {
@@ -192,12 +195,12 @@ void Shell::do_exit()
     }
     exit(0);
 }
-
+// 列出目录
 void Shell::do_ls()
 {
     if (argc == 0) // 列出当前目录
     {
-
+        VDFileSys::getInstance().ls();
     }
     else // 列出参数目录下的文件
     {
@@ -205,13 +208,62 @@ void Shell::do_ls()
         {
             printf("%s :\n", args[i]);
             printf("\n");
+            VDFileSys::getInstance().ls();
         }
     }
 }
-
+// chdir 切换目录
 void Shell::do_cd()
 {
+    if(argc == 0)
+    {
+        // do nothing
+    }
+    else
+    {
+        VDFileSys::getInstance().cd(args[0]);
+    }
+}
 
+// 将文件存入虚拟磁盘
+void Shell::do_save()
+{
+    if(argc != 2)
+    {
+        printErr("Need 2 Arguments");
+        printf("Don't know usage? See help\n");
+    }
+    else
+    {
+        VDFileSys::getInstance().save(args[0], args[1]);
+    }
+}
+
+// 将虚拟磁盘中的文件导出
+void Shell::do_load()
+{
+    if(argc != 2)
+    {
+        printErr("Need 2 arguments");
+        printf("Don't know usage? See help\n");
+    }
+    else
+    {
+        VDFileSys::getInstance().load(args[0], args[1]);
+    }
+}
+
+// 删除虚拟磁盘中的文件
+void Shell::do_rm()
+{
+    if(argc == 0)
+    {
+        printErr("Need 1 arguments");
+    }
+    else
+    {
+        VDFileSys::getInstance().rm(args[0]);
+    }
 }
 
 /////////////////////////////////////////////////////////////////

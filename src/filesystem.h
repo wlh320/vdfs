@@ -67,9 +67,6 @@ public:
 typedef Bitmap<4096> DataBitmap;
 typedef Bitmap<128> InodeBitmap;
 
-
-
-
 // 目录项结构
 struct DirectoryEntry
 {
@@ -78,6 +75,24 @@ public:
 
     int m_ino;		/* 目录项中Inode编号部分 */
     char m_name[DIRSIZE];	/* 目录项中路径名部分 */
+};
+
+// 外存 Inode 结构, 一个 64 bytes, 一块有8个
+struct DiskInode
+{
+    unsigned int d_mode;    /* 状态的标志位，定义见enum INodeFlag */
+    int     d_nlink;        /* 文件联结计数，即该文件在目录树中不同路径名的数量 */
+
+    short   d_uid;          /* 文件所有者的用户标识数 */
+    short   d_gid;          /* 文件所有者的组标识数 */
+
+    int     d_size;         /* 文件大小，字节为单位 */
+    int     d_addr[10];     /* 用于文件逻辑块号和物理块号转换的基本索引表 */
+
+    int     d_atime;        /* 最后访问时间 */
+    int     d_mtime;        /* 最后修改时间 */
+
+    DiskInode();
 };
 
 class FileSystem
@@ -99,7 +114,6 @@ public:
 
 private:
     SuperBlock *sb;
-    Inode *inode;
     InodeBitmap *ibmp;
     DataBitmap  *dbmp;
 
@@ -113,6 +127,7 @@ public:
 
     void mkfs();    //格式化磁盘
     void update();  //将修改写入磁盘
+
 };
 
 #endif // FILESYSTEM_H

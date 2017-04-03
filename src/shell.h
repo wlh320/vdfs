@@ -51,12 +51,17 @@ public:
     void run(); //死循环执行
 
     // 内置命令入口函数
-    void do_load();
-    void do_eject();
-    void do_exit();
     void do_help();
-    void do_ls();
+    void do_exit();
+
+    void do_mount();
+    void do_eject();
+
     void do_cd();
+    void do_ls();
+    void do_save();
+    void do_load();
+    void do_rm();
 
 };
 

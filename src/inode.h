@@ -7,6 +7,7 @@
 
 #ifndef INODE_H
 #define INODE_H
+#include "buffer.h"
 
 // 内存Inode
 class Inode
@@ -68,28 +69,13 @@ public:
 public:
     Inode();
     void iupdate(int time); //更新inode
+    void icopy(Buf *bp, int inumber); //将外存inode拷贝进来
+    void iclear(); //清空inode
+    void itrunc();
+
     int bmap(int lbn); //由逻辑块号转换为物理块号
     void readi();  // 读取inode中的数据
     void writei(); // 数据写入inode
-
-};
-
-// 外存 Inode 结构, 一个 64 bytes, 一块有8个
-struct DiskInode
-{
-    unsigned int d_mode;    /* 状态的标志位，定义见enum INodeFlag */
-    int     d_nlink;        /* 文件联结计数，即该文件在目录树中不同路径名的数量 */
-
-    short   d_uid;          /* 文件所有者的用户标识数 */
-    short   d_gid;          /* 文件所有者的组标识数 */
-
-    int     d_size;         /* 文件大小，字节为单位 */
-    int     d_addr[10];     /* 用于文件逻辑块号和物理块号转换的基本索引表 */
-
-    int     d_atime;        /* 最后访问时间 */
-    int     d_mtime;        /* 最后修改时间 */
-
-    DiskInode();
 };
 
 //InodeTable 内存中的Inode
@@ -100,6 +86,12 @@ public:
 private:
     Inode inode[NINODE];
 public:
+    Inode* getFreeInode(); //从table中返回一个
+    bool isLoaded(int inumber); //某个Inode是否在内存中
+    void update(); // Inode更新到外存
+    void iget(int inumber); // 获取某个inode,内存有则返回，没有则加载
+    void iput(Inode* pInode); // 释放对某个inode的引用
+
 
 };
 

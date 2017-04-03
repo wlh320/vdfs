@@ -138,6 +138,7 @@ int BufMgr::strategy(Buf* bp)
          * 处理程序中调用IODone()唤醒等待I/O操作结束的进程。
          */
         //bm.IODone(bp);
+        bp->b_flags |= Buf::B_DONE;
         return 0;	/* GCC likes it ! */
     }
 
@@ -162,6 +163,8 @@ int BufMgr::strategy(Buf* bp)
     /* 设置磁盘寄存器，启动I/O操作 */
     DiskMgr *dm = VDFileSys::getInstance().getDiskMgr();
     dm->devStart(bp);
+
+    bp->b_flags |= Buf::B_DONE;
 
     //X86Assembly::STI();
 

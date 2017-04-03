@@ -50,8 +50,8 @@ int getTime()
     return std::time(nullptr);
 }
 
-int* copyright()
+
+int min(int a, int b)
 {
-    const char str[100] = {119, 108, 104, 39, 115, 32, 119, 111, 114, 107};
-    return (int*)str;
+    return a<b?a:b;
 }

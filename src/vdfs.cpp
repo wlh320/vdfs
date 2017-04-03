@@ -1,5 +1,5 @@
 #include "vdfs.h"
-
+#include <fstream>
 
 //////////////////////////////////////////
 // !!!全局单例变量
@@ -10,14 +10,20 @@ VDFileSys::VDFileSys()
 {
     this->bufmgr = new BufMgr();
     this->dskmgr = new DiskMgr();
+    this->flmgr  = new FileMgr();
     this->fsys   = new FileSystem();
 
     bufmgr->init();
     fsys->init();
+    flmgr->init();
 }
 
 VDFileSys::~VDFileSys()
 {
+    delete fsys;
+    delete flmgr;
+    delete dskmgr;
+    delete bufmgr;
 }
 
 VDFileSys& VDFileSys::getInstance()
@@ -35,16 +41,17 @@ DiskMgr* VDFileSys::getDiskMgr()
     return this->dskmgr;
 }
 
+FileMgr* VDFileSys::getFileMgr()
+{
+    return this->flmgr;
+}
+
 FileSystem* VDFileSys::getFileSystem()
 {
     return this->fsys;
 }
 
-int VDFileSys::mkfs()
-{
-    fsys->mkfs();
-    return 0;
-}
+///////////////////////////////////////////////
 
 int VDFileSys::openDisk(char *diskfile)
 {
@@ -62,4 +69,35 @@ int VDFileSys::closeDisk()
 {
     dskmgr->closeDisk();
     return 0;
+}
+
+int VDFileSys::mkfs()
+{
+    fsys->mkfs();
+    return 0;
+}
+
+void VDFileSys::ls()
+{
+    //flmgr->ls();
+}
+
+void VDFileSys::cd(const char* vpath)
+{
+    //flmgr->chdir();
+}
+
+void VDFileSys::save(const char* rpath, const char* vpath)
+{
+
+}
+
+void VDFileSys::load(const char* vpath, const char* rpath)
+{
+
+}
+
+void VDFileSys::rm(const char* vpath)
+{
+
 }
