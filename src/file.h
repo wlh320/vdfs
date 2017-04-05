@@ -11,23 +11,16 @@
 #include "inode.h"
 #include "filesystem.h"
 
-class File
-{
-public:
-    File();
-};
-
-
 class FileMgr
 {
 public:
     // 记录当前路径信息
     Inode* rootDirInode;/* 根目录内存Inode */
-    Inode* u_cdir;  /* 指向当前目录的Inode指针 */
-    Inode* u_pdir;	/* 指向父目录的Inode指针 */
-    DirectoryEntry u_dent;	/* 当前目录的目录项 */
-    char u_dbuf[DirectoryEntry::DIRSIZE]; /* 当前路径分量 */
-    char u_curdir[128]; /* 当前工作目录完整路径 */
+    Inode* cdir;  /* 指向当前目录的Inode指针 */
+    Inode* pdir;	/* 指向父目录的Inode指针 */
+    DirectoryEntry dent;	/* 当前目录的目录项 */
+    char dbuf[DirectoryEntry::DIRSIZE]; /* 当前路径分量 */
+    char curdir[128]; /* 当前工作目录完整路径 */
     // 读写变量
     byte *base; //读写目标区域
     int offset;//当前读写文件的偏移
@@ -38,7 +31,7 @@ public:
 
     // 系统调用
     void ls();
-    void chdir();
+    void chdir(char *path);
     int  fopen(char *name, int mode);
     int  fcreat(char *name, int mode);
     void fclose(int fd);
@@ -46,6 +39,8 @@ public:
     int  fwrite(int fd, char *buffer, int length);
     int  flseek(int fd, int position);
     int  fdelete(char *name);
+
+    void test();
 };
 
 #endif // FILE_H

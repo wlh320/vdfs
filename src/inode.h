@@ -19,7 +19,6 @@ public:
         ILOCK = 0x1,		/* 索引节点上锁 */
         IUPD  = 0x2,		/* 内存inode被修改过，需要更新相应外存inode */
         IACC  = 0x4,		/* 内存inode被访问过，需要修改最近一次访问时间 */
-        IMOUNT = 0x8,		/* 内存inode用于挂载子文件系统 */
         IWANT = 0x10,		/* 有进程正在等待该内存inode被解锁，清ILOCK标志时，要唤醒这种进程 */
         ITEXT = 0x20		/* 内存inode对应进程图像的正文段 */
     };
@@ -62,7 +61,7 @@ public:
     short   i_gid;			/* 文件所有者的组标识数 */
 
     int     i_size;         /* 文件大小，字节为单位 */
-    int     i_addr[10];     /* 用于文件逻辑块好和物理块号转换的基本索引表 */
+    int     i_addr[10];     /* 用于文件逻辑块和物理块号转换的基本索引表 */
 
     int     i_lastr;        /* 存放最近一次读取文件的逻辑块号，用于判断是否需要预读 */
 
@@ -87,12 +86,10 @@ private:
     Inode inode[NINODE];
 public:
     Inode* getFreeInode(); //从table中返回一个
-    bool isLoaded(int inumber); //某个Inode是否在内存中
+    int isLoaded(int inumber); //某个Inode是否在内存中
     void update(); // Inode更新到外存
-    void iget(int inumber); // 获取某个inode,内存有则返回，没有则加载
+    Inode* iget(int inumber); // 获取某个inode,内存有则返回，没有则加载
     void iput(Inode* pInode); // 释放对某个inode的引用
-
-
 };
 
 #endif // INODE_H

@@ -24,6 +24,7 @@ private:
     DiskMgr *dskmgr;
     FileMgr *flmgr;
     FileSystem *fsys;
+    InodeTable *ib;
 
 public:
     VDFileSys();
@@ -36,11 +37,13 @@ public:
     DiskMgr* getDiskMgr();
     FileSystem* getFileSystem();
     FileMgr* getFileMgr();
+    InodeTable* getInodeTable();
 
     //功能接口
     int openDisk(char*); // 加载磁盘
     int creatDisk(char*); // 创建磁盘
     int closeDisk();    // 卸载磁盘
+    void loadFilesys(); // 加载文件系统
 
     int mkfs(); //格式化磁盘
     void ls();  //列目录

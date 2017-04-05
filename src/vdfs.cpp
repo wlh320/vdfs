@@ -12,6 +12,7 @@ VDFileSys::VDFileSys()
     this->dskmgr = new DiskMgr();
     this->flmgr  = new FileMgr();
     this->fsys   = new FileSystem();
+    this->ib     = new InodeTable();
 
     bufmgr->init();
     fsys->init();
@@ -51,6 +52,11 @@ FileSystem* VDFileSys::getFileSystem()
     return this->fsys;
 }
 
+InodeTable* VDFileSys::getInodeTable()
+{
+    return this->ib;
+}
+
 ///////////////////////////////////////////////
 
 int VDFileSys::openDisk(char *diskfile)
@@ -69,6 +75,11 @@ int VDFileSys::closeDisk()
 {
     dskmgr->closeDisk();
     return 0;
+}
+
+void VDFileSys::loadFilesys()
+{
+    fsys->loadSuperBlock();
 }
 
 int VDFileSys::mkfs()

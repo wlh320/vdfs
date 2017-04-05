@@ -17,7 +17,7 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     { "save",  &Shell::do_save,  "将文件保存至虚拟磁盘",     "save 实际路径 虚拟路径"},
     { "load",  &Shell::do_load,  "将文件从虚拟磁盘中取出",   "load 虚拟路径 实际路径"},
     { "rm",    &Shell::do_rm,    "将文件从虚拟磁盘中删除",   "rm 虚拟路径"},
-    { NULL,   NULL,            NULL,                   NULL }
+    { NULL,    NULL,             NULL,                   NULL }
 };
 
 Shell::Shell()
@@ -157,7 +157,7 @@ void Shell::do_mount()
     {
         //先尝试打开
         int res = VDFileSys::getInstance().openDisk(this->args[0]);
-        VDFileSys::getInstance().mkfs();
+
         if (res == ERR)
         {
             //打开不成功，创建并格式化一个新磁盘
@@ -165,6 +165,11 @@ void Shell::do_mount()
             VDFileSys::getInstance().creatDisk(this->args[0]);
             VDFileSys::getInstance().openDisk(this->args[0]);
             VDFileSys::getInstance().mkfs();
+        }
+        else
+        {
+            VDFileSys::getInstance().loadFilesys();
+            VDFileSys::getInstance().getFileMgr()->test();
         }
         strcpy(this->disk, this->args[0]);
     }
@@ -191,10 +196,13 @@ void Shell::do_exit()
     // 保存修改
     if (this->disk != NULL)
     {
+        VDFileSys::getInstance().getFileSystem()->update();
         VDFileSys::getInstance().closeDisk();
     }
+
     exit(0);
 }
+
 // 列出目录
 void Shell::do_ls()
 {

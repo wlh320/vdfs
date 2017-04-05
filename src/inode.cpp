@@ -52,7 +52,7 @@ int Inode::bmap(int lbn)
         if( phyblkno == 0 && (pFirstBuf = fsys->dalloc()) != NULL )
         {
             // 延迟写
-            bufmgr->bdwrite(pFirstBuf);
+            bufmgr->bwrite(pFirstBuf);
             phyblkno = pFirstBuf->b_blkno;
             /* 将逻辑块号lbn映射到物理盘块号phyBlkno */
             this->i_addr[lbn] = phyblkno;
@@ -110,7 +110,7 @@ int Inode::bmap(int lbn)
                 /* 将新分配的一次间接索引表磁盘块号，记入二次间接索引表相应项 */
                 iTable[index] = pSecondBuf->b_blkno;
                 /* 将更改后的二次间接索引表延迟写方式输出到磁盘 */
-                bufmgr->bdwrite(pFirstBuf);
+                bufmgr->bwrite(pFirstBuf);
             }
             else
             {
@@ -135,8 +135,8 @@ int Inode::bmap(int lbn)
             phyblkno = pSecondBuf->b_blkno;
             iTable[index] = phyblkno;
             /* 将数据盘块、更改后的一次间接索引表用延迟写方式输出到磁盘 */
-            bufmgr->bdwrite(pSecondBuf);
-            bufmgr->bdwrite(pFirstBuf);
+            bufmgr->bwrite(pSecondBuf);
+            bufmgr->bwrite(pFirstBuf);
         }
         else
         {
@@ -234,7 +234,8 @@ void Inode::writei()
         else /* 如果缓冲区未写满 */
         {
             /* 将缓存标记为延迟写，不急于进行I/O操作将字符块输出到磁盘上 */
-            bufmgr->bdwrite(bp);
+            //bufmgr->bdwrite(bp);
+            bufmgr->bwrite(bp);
         }
         /* 普通文件长度增加 */
         if( (this->i_size < fmgr->offset) && (this->i_mode & (Inode::IFBLK & Inode::IFCHR)) == 0 )
@@ -314,7 +315,64 @@ void Inode::iclear()
 
 void Inode::itrunc()
 {
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
+    FileSystem *filesys = VDFileSys::getInstance().getFileSystem();
 
+    /* 如果是字符设备或者块设备则退出 */
+    if( this->i_mode & (Inode::IFCHR & Inode::IFBLK) )
+    {
+        return;
+    }
+    /* 采用FILO方式释放，以尽量使得SuperBlock中记录的空闲盘块号连续。*/
+    for(int i = 9; i >= 0; i--)		/* 从i_addr[9]到i_addr[0] */
+    {
+        /* 如果i_addr[]中第i项存在索引 */
+        if( this->i_addr[i] != 0 )
+        {
+            /* 如果是i_addr[]中的一次间接、两次间接索引项 */
+            if( i >= 6 && i <= 9 )
+            {
+                /* 将间接索引表读入缓存 */
+                Buf* pFirstBuf = bufmgr->bread(this->i_addr[i]);
+                /* 获取缓冲区首址 */
+                int* pFirst = (int *)pFirstBuf->b_addr;
+
+                /* 每张间接索引表记录 512/sizeof(int) = 128个磁盘块号，遍历这全部128个磁盘块 */
+                for(int j = 128 - 1; j >= 0; j--)
+                {
+                    if( pFirst[j] != 0)	/* 如果该项存在索引 */
+                    {
+                        /*
+                         * 如果是两次间接索引表，i_addr[8]或i_addr[9]项，
+                         * 那么该字符块记录的是128个一次间接索引表存放的磁盘块号
+                         */
+                        if( i >= 8 && i <= 9)
+                        {
+                            Buf* pSecondBuf = bufmgr->bread(pFirst[j]);
+                            int* pSecond = (int *)pSecondBuf->b_addr;
+                            for(int k = 128 - 1; k >= 0; k--)
+                            {
+                                if(pSecond[k] != 0)
+                                    filesys->dfree(pSecond[k]);
+                            }
+                            /* 缓存使用完毕，释放以便被其它进程使用 */
+                            bufmgr->brelse(pSecondBuf);
+                        }
+                        filesys->dfree(pFirst[j]);
+                    }
+                }
+                bufmgr->brelse(pFirstBuf);
+            }
+            /* 释放索引表本身占用的磁盘块 */
+            filesys->dfree(this->i_addr[i]);
+            this->i_addr[i] = 0;
+        }
+    }
+    // 修改inode
+    this->i_size = 0;
+    this->i_flag |= Inode::IUPD;
+    this->i_mode &= ~(Inode::ILARG & Inode::IRWXU & Inode::IRWXG & Inode::IRWXO);
+    this->i_nlink = 1;
 }
 
 //////////// Inode Table ///////////////
@@ -326,7 +384,7 @@ Inode* InodeTable::getFreeInode()
     return NULL;
 }
 
-bool InodeTable::isLoaded(int inumber)
+int InodeTable::isLoaded(int inumber)
 {
     for(int i = 0; i < NINODE; ++i)
         if (this->inode[i].i_count != 0 && this->inode[i].i_number == inumber)
@@ -341,7 +399,7 @@ void InodeTable::update()
             inode[i].iupdate(getTime());
 }
 
-void InodeTable::iget(int inumber)
+Inode *InodeTable::iget(int inumber)
 {
     Inode *pInode;
     int index = isLoaded(inumber);
@@ -356,7 +414,7 @@ void InodeTable::iget(int inumber)
         if(pInode == NULL) //获取失败
         {
             printErr("Inode table is full");
-            return;
+            return NULL;
         }
         else
         {
@@ -368,6 +426,7 @@ void InodeTable::iget(int inumber)
             bufmgr->brelse(bp);
         }
     }
+    return pInode;
 }
 
 void InodeTable::iput(Inode *pInode)

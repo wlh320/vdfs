@@ -25,7 +25,6 @@ int firstOnePos(unsigned int x)
       31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
     };
 
-    x = ~x;
     return MultiplyDeBruijnBitPosition[((uint32_t)((x & -x) * 0x077CB531U)) >> 27];
 }
 

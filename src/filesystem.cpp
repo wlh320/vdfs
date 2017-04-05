@@ -61,9 +61,31 @@ void FileSystem::init()
     ibmp = new InodeBitmap();
 }
 
+void FileSystem::loadSuperBlock()
+{
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
+    // load SuperBlock
+    Buf *bp = bufmgr->bread(SUPER_BLOCK_START);
+    IOMove(bp->b_addr, (byte *)sb, sizeof(SuperBlock));
+    // load Bitmap
+    bp = bufmgr->bread(INODE_BITMAP_START);
+    IOMove(bp->b_addr, (byte*)ibmp, sizeof(InodeBitmap));
+    bp = bufmgr->bread(DATA_BITMAP_START);
+    IOMove(bp->b_addr, (byte*)dbmp, sizeof(DataBitmap));
+}
+
 void FileSystem::mkfs()
 {
     BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
+
+    // init Inode table
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
+    Inode *pNode = ialloc();
+    pNode->i_flag |= (Inode::IACC | Inode::IUPD);
+    pNode->i_mode = Inode::IALLOC | Inode::IFDIR /* Most vital!! */| Inode::IREAD | Inode::IWRITE | Inode::IEXEC | (Inode::IREAD >> 3) | (Inode::IWRITE >> 3) | (Inode::IEXEC >> 3) | (Inode::IREAD >> 6) | (Inode::IWRITE >> 6) | (Inode::IEXEC >> 6);
+    pNode->i_nlink = 1;
+    ib->iput(pNode);
+
     // init SuperBlock
     Buf *bp = bufmgr->getBlk(SUPER_BLOCK_START);
     IOMove((byte *)sb, bp->b_addr, sizeof(SuperBlock));
@@ -75,14 +97,23 @@ void FileSystem::mkfs()
     bp = bufmgr->getBlk(DATA_BITMAP_START);
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
-    // init Inode table
 
 }
 
 Inode* FileSystem::ialloc()
 {
-    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
-    return NULL;
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
+    int ino = ibmp->alloc();
+    Inode *pinode = ib->iget(ino);
+    if(pinode == NULL)
+        return NULL;
+    if(pinode->i_mode == 0)
+    {
+        pinode->iclear();
+        sb->s_fmod = 1;
+        return pinode;
+    }
+    return pinode;
 }
 
 Buf* FileSystem::dalloc()
@@ -96,7 +127,7 @@ Buf* FileSystem::dalloc()
     }
     else
     {
-        Buf* bp = bufmgr->getBlk(blkno);
+        Buf* bp = bufmgr->getBlk(DATA_ZONE_START + blkno);
         bufmgr->bclear(bp);
         sb->s_nfree--;
         sb->s_fmod = 1;
@@ -104,12 +135,12 @@ Buf* FileSystem::dalloc()
     }
 }
 
-void FileSystem::ifree(int blkno)
+void FileSystem::ifree(int number)
 {
     if(sb->s_flock)
         return ;
 
-    ibmp->release(blkno - INODE_ZONE_START);
+    ibmp->release(number);
 
     sb->s_fmod = 1;
 }
@@ -124,11 +155,11 @@ void FileSystem::dfree(int blkno)
     sb->s_fmod = 1;
 }
 
+// 更新整张磁盘的内容
 void FileSystem::update()
 {
     BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     Buf *bp;
-
     // update superblock
     if (sb->s_fmod)
     {
@@ -143,7 +174,10 @@ void FileSystem::update()
     bp = bufmgr->getBlk(DATA_BITMAP_START);
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
-
     // update inode table
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
+    ib->update();
 
+    // update disk data
+    //bufmgr->bflush();
 }

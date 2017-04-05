@@ -96,7 +96,6 @@ void BufMgr::bwrite(Buf *bp)
     if( (flags & Buf::B_ASYNC) == 0 )
     {
         /* 同步写，需要等待I/O操作结束 */
-        //this->IOWait(bp);
         this->brelse(bp);
     }
     return;
@@ -123,6 +122,25 @@ void BufMgr::bclear(Buf *bp)
 {
     byte *bc = bp->b_addr;
     memset(bc, 0, BUFFER_SIZE);
+}
+
+void BufMgr::bflush()
+{
+    Buf *bp;
+    for(bp = this->freelist.av_forw; bp != &(this->freelist); bp = bp->av_forw)
+    {
+        /* 找出自由队列中所有延迟写的块 */
+        if( (bp->b_flags & Buf::B_DELWRI))
+        {
+            bp->b_flags |= Buf::B_ASYNC;
+            /* 从自由队列中取出 */
+            bp->av_back->av_forw = bp->av_forw;
+            bp->av_forw->av_back = bp->av_back;
+            /* 设置B_BUSY标志 */
+            bp->b_flags |= Buf::B_BUSY;
+            this->bwrite(bp);
+        }
+    }
 }
 
 int BufMgr::strategy(Buf* bp)
@@ -164,7 +182,7 @@ int BufMgr::strategy(Buf* bp)
     DiskMgr *dm = VDFileSys::getInstance().getDiskMgr();
     dm->devStart(bp);
 
-    bp->b_flags |= Buf::B_DONE;
+    //bp->b_flags |= Buf::B_DONE;
 
     //X86Assembly::STI();
 

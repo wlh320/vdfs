@@ -66,6 +66,7 @@ public:
     void brelse(Buf *bp);   //释放缓存
     void bclear(Buf *bp);   //清空缓存块
     void bdwrite(Buf *bp);  //延迟写
+    void bflush();          //所有延迟写的写入磁盘
 
     int strategy(Buf* bp);  //调度
 };

@@ -65,7 +65,7 @@ public:
     void release(int blkno); //释放一个block
 };
 typedef Bitmap<4096> DataBitmap;
-typedef Bitmap<128> InodeBitmap;
+typedef Bitmap<1024> InodeBitmap;
 
 // 目录项结构
 struct DirectoryEntry
@@ -119,10 +119,11 @@ private:
 
 public:
     void init();
+    void loadSuperBlock();
 
     Inode* ialloc();  //分配Inode
     Buf* dalloc();  //分配数据块
-    void ifree(int blkno);  //释放Inode
+    void ifree(int number);  //释放Inode
     void dfree(int blkno);  //释放数据块
 
     void mkfs();    //格式化磁盘
