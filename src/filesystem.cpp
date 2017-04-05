@@ -78,7 +78,7 @@ void FileSystem::mkfs()
 {
     BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
 
-    // init Inode table
+    // make rootdir
     InodeTable *ib = VDFileSys::getInstance().getInodeTable();
     Inode *pNode = ialloc();
     pNode->i_flag |= (Inode::IACC | Inode::IUPD);
@@ -97,7 +97,6 @@ void FileSystem::mkfs()
     bp = bufmgr->getBlk(DATA_BITMAP_START);
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
-
 }
 
 Inode* FileSystem::ialloc()

@@ -16,7 +16,6 @@ VDFileSys::VDFileSys()
 
     bufmgr->init();
     fsys->init();
-    flmgr->init();
 }
 
 VDFileSys::~VDFileSys()
@@ -93,9 +92,9 @@ void VDFileSys::ls()
     //flmgr->ls();
 }
 
-void VDFileSys::cd(const char* vpath)
+void VDFileSys::cd(const char *vpath)
 {
-    //flmgr->chdir();
+    flmgr->chdir(vpath);
 }
 
 void VDFileSys::save(const char* rpath, const char* vpath)

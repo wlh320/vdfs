@@ -46,6 +46,8 @@ Buf* BufMgr::getBlk(int blkno)
         bp->b_flags |= Buf::B_BUSY;
         return bp;
     }
+    bp->b_flags = Buf::B_BUSY;
+
     /* 取自由队列第一个空闲块 */
     bp = this->freelist.av_forw;
     /* 从自由队列中取出 */
@@ -182,7 +184,7 @@ int BufMgr::strategy(Buf* bp)
     DiskMgr *dm = VDFileSys::getInstance().getDiskMgr();
     dm->devStart(bp);
 
-    //bp->b_flags |= Buf::B_DONE;
+    //bp->b_flags |= Buf::B_DONE; // ?
 
     //X86Assembly::STI();
 

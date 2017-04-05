@@ -169,8 +169,10 @@ void Shell::do_mount()
         else
         {
             VDFileSys::getInstance().loadFilesys();
-            VDFileSys::getInstance().getFileMgr()->test();
+
         }
+        VDFileSys::getInstance().getFileMgr()->init();
+        VDFileSys::getInstance().getFileMgr()->test();
         strcpy(this->disk, this->args[0]);
     }
 }
