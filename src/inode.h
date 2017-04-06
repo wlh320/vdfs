@@ -85,6 +85,7 @@ public:
 private:
     Inode inode[NINODE];
 public:
+    void init();
     Inode* getFreeInode(); //从table中返回一个
     int isLoaded(int inumber); //某个Inode是否在内存中
     void update(); // Inode更新到外存

@@ -376,6 +376,12 @@ void Inode::itrunc()
 }
 
 //////////// Inode Table ///////////////
+void InodeTable::init()
+{
+    for(int i = 0; i < NINODE; ++i)
+        inode[i].iclear();
+}
+
 Inode* InodeTable::getFreeInode()
 {
     for(int i = 0; i < NINODE; ++i)

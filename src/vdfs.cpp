@@ -83,18 +83,49 @@ void VDFileSys::loadFilesys()
 
 int VDFileSys::mkfs()
 {
-    fsys->mkfs();
-    return 0;
+    if (dskmgr->isOpen())
+    {
+        fsys->mkfs();
+        return 0;
+    }
+    return -1;
 }
 
 void VDFileSys::ls()
 {
-    //flmgr->ls();
+    if(dskmgr->isOpen())
+    {
+        DirectoryEntry tde;
+        flmgr->fopen(flmgr->curdir,File::FREAD);
+        int cnt = 0;
+        while(true)
+        {
+            cnt = flmgr->fread((char*)&tde,32);
+            if (cnt == 0)
+                break;
+            printf("%s\t", tde.m_name);
+        }
+        flmgr->fclose();
+    }
+    printf("\n");
 }
 
-void VDFileSys::cd(const char *vpath)
+int VDFileSys::cd(const char *vpath)
 {
-    flmgr->chdir(vpath);
+    if(dskmgr->isOpen())
+    {
+        int res = flmgr->chdir(vpath);
+        return res;
+    }
+    return -1;
+}
+
+void VDFileSys::mkdir(const char *vpath)
+{
+    if(dskmgr->isOpen())
+    {
+        flmgr->creatDir(vpath);
+    }
 }
 
 void VDFileSys::save(const char* rpath, const char* vpath)

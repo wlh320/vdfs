@@ -11,6 +11,27 @@
 #include "inode.h"
 #include "filesystem.h"
 
+class File
+{
+public:
+    enum FileFlags
+    {
+        FREAD = 0x1,			/* 读请求类型 */
+        FWRITE = 0x2,			/* 写请求类型 */
+    };
+
+    unsigned int flag;
+    Inode* inode;
+    int f_count;
+    int f_offset;
+
+public:
+    File();
+    void close();
+    bool isOpen();
+};
+
+// 文件管理类
 class FileMgr
 {
     /* 目录搜索模式，用于NameI()函数 */
@@ -34,6 +55,8 @@ public:
     byte *base; //读写目标区域
     int offset;//当前读写文件的偏移
     int count; //当前剩余读写字节
+    //打开的文件
+    File *file;
 public:
     void init();
 
@@ -42,16 +65,19 @@ public:
     Inode* namei(const char *path, int mode); // 路径线性搜索
     Inode* mknode(int mode);//创建inode
     void   writeDir(Inode* pInode);
+    void   removeDot();
+
+    void creatDir(const char* path);
 
     // 系统调用
     void ls();
-    void chdir(const char *path);
-    int  fopen(char *name, int mode);
-    int  fcreat(char *name, int mode);
-    void fclose(int fd);
-    int  fread(int fd, char *buffer, int length);
-    int  fwrite(int fd, char *buffer, int length);
-    int  flseek(int fd, int position);
+    int chdir(const char *path);
+    int  fopen(const char *name, int mode);
+    int  fcreat(const char *name, int mode);
+    void fclose();
+    int  fread(char *buffer, int length);
+    int  fwrite(char *buffer, int length);
+    int  flseek(int position);
     int  fdelete(char *name);
 
     void test();

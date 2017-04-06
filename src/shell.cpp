@@ -10,13 +10,16 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     //命令      入口函数           命令功能描述              命令帮助信息
     { "exit",  &Shell::do_exit,  "保存所有更改并退出shell", "exit" },
     { "help",  &Shell::do_help,  "打印命令帮助信息",        "help [命令]" },
-    { "mount",  &Shell::do_mount,  "加载虚拟磁盘文件",        "load 磁盘文件路径"},
+    { "mount",  &Shell::do_mount,"加载虚拟磁盘文件",        "load 磁盘文件路径"},
     { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
+
     { "ls",    &Shell::do_ls,    "列出路径下的文件",        "ls [路径]" },
     { "cd",    &Shell::do_cd,    "修改当前路径",           "cd 路径" },
     { "save",  &Shell::do_save,  "将文件保存至虚拟磁盘",     "save 实际路径 虚拟路径"},
     { "load",  &Shell::do_load,  "将文件从虚拟磁盘中取出",   "load 虚拟路径 实际路径"},
+    { "mkdir", &Shell::do_mkdir, "在虚拟磁盘中创建目录",     "mkdir 路径"},
     { "rm",    &Shell::do_rm,    "将文件从虚拟磁盘中删除",   "rm 虚拟路径"},
+    { "mkfs",  &Shell::do_mkfs,  "将磁盘格式化",            "mkfs"},
     { NULL,    NULL,             NULL,                   NULL }
 };
 
@@ -81,12 +84,15 @@ void Shell::parseCommand()
     // 分割参数
     for(int i = 0; i < len; ++i)
     {
-        if (isDelim(cmdbuf[i]) && !isDelim(cmdbuf[i+1]))
+        if (isDelim(cmdbuf[i]))
         {
             cmdbuf[i] = '\0'; // 分隔符置为尾0来分割字符串
-            args[argc++] = cmdbuf + (i + 1);
-            if (argc > ARG_MAX)
-                break;
+            if (!isDelim(cmdbuf[i+1]))
+            {
+                args[argc++] = cmdbuf + (i + 1);
+                if (argc > ARG_MAX)
+                    break;
+            }
         }
     }
 }
@@ -161,7 +167,7 @@ void Shell::do_mount()
         if (res == ERR)
         {
             //打开不成功，创建并格式化一个新磁盘
-            printf("WARN: Load disk failed, we'll make one for you. :)\n");
+            printf("WARN: Load disk failed, creat one.\n");
             VDFileSys::getInstance().creatDisk(this->args[0]);
             VDFileSys::getInstance().openDisk(this->args[0]);
             VDFileSys::getInstance().mkfs();
@@ -180,7 +186,7 @@ void Shell::do_mount()
 // 卸载磁盘文件
 void Shell::do_eject()
 {
-    if(strcmp(this->disk, "No Disk"))
+    if(!strcmp(this->disk, "No Disk"))
     {
         VDFileSys::getInstance().closeDisk();
         strcpy(this->disk, "No Disk");
@@ -196,7 +202,7 @@ void Shell::do_exit()
 {
     printf("Bye!\n");
     // 保存修改
-    if (this->disk != NULL)
+    if (strcmp(this->disk, "No Disk"))
     {
         VDFileSys::getInstance().getFileSystem()->update();
         VDFileSys::getInstance().closeDisk();
@@ -231,7 +237,9 @@ void Shell::do_cd()
     }
     else
     {
-        VDFileSys::getInstance().cd(args[0]);
+        int res = VDFileSys::getInstance().cd(args[0]);
+        if (res == 0)
+            strcpy(this->cwd, VDFileSys::getInstance().getFileMgr()->curdir);
     }
 }
 
@@ -273,6 +281,24 @@ void Shell::do_rm()
     else
     {
         VDFileSys::getInstance().rm(args[0]);
+    }
+}
+
+//格式化
+void Shell::do_mkfs()
+{
+    VDFileSys::getInstance().mkfs();
+}
+
+void Shell::do_mkdir()
+{
+    if(argc == 0)
+    {
+        printErr("Need arguments");
+    }
+    else
+    {
+        VDFileSys::getInstance().mkdir(args[0]);
     }
 }
 

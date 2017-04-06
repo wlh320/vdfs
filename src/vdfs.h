@@ -46,8 +46,9 @@ public:
     void loadFilesys(); // 加载文件系统
 
     int mkfs(); //格式化磁盘
+    void mkdir(const char *vpath);
     void ls();  //列目录
-    void cd(const char* vpath); // 修改路径
+    int cd(const char* vpath); // 修改路径
     void save(const char* rpath, const char* vpath); // 保存文件到虚拟磁盘
     void load(const char* vpath, const char* rpath); // 从虚拟磁盘读取文件
     void rm(const char* vpath); // 删除文件

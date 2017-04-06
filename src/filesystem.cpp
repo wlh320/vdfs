@@ -73,19 +73,39 @@ void FileSystem::loadSuperBlock()
     bp = bufmgr->bread(DATA_BITMAP_START);
     IOMove(bp->b_addr, (byte*)dbmp, sizeof(DataBitmap));
 }
+void FileSystem::creatRoot()
+{
+    // make rootdir
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
+    ib->init();
+    Inode *pInode = ialloc();
+    // alloc disk block
+    Buf *newBuf = dalloc();
+    DirectoryEntry initde;
+    initde.m_ino = pInode->i_number;
+    initde.m_name[0] = '.';
+    for(int i = 1; i < DirectoryEntry::DIRSIZE; ++i)
+        initde.m_name[i] = '\0';
+    IOMove((byte*)&initde, newBuf->b_addr, sizeof(DirectoryEntry));
+    initde.m_name[1] = '.';
+    IOMove((byte*)&initde, newBuf->b_addr + sizeof(DirectoryEntry), sizeof(DirectoryEntry));
+    bufmgr->bwrite(newBuf);
+
+    pInode->i_flag |= (Inode::IACC | Inode::IUPD);
+    pInode->i_mode = Inode::IALLOC | Inode::IFDIR /* Most vital!! */| Inode::IREAD | Inode::IWRITE | Inode::IEXEC | (Inode::IREAD >> 3) | (Inode::IWRITE >> 3) | (Inode::IEXEC >> 3) | (Inode::IREAD >> 6) | (Inode::IWRITE >> 6) | (Inode::IEXEC >> 6);
+    pInode->i_nlink = 1;
+    pInode->i_addr[0] = newBuf->b_blkno;
+    pInode->i_size = 2 * sizeof(DirectoryEntry);
+    ib->iput(pInode);
+}
 
 void FileSystem::mkfs()
 {
+    this->init();
     BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
-
-    // make rootdir
-    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
-    Inode *pNode = ialloc();
-    pNode->i_flag |= (Inode::IACC | Inode::IUPD);
-    pNode->i_mode = Inode::IALLOC | Inode::IFDIR /* Most vital!! */| Inode::IREAD | Inode::IWRITE | Inode::IEXEC | (Inode::IREAD >> 3) | (Inode::IWRITE >> 3) | (Inode::IEXEC >> 3) | (Inode::IREAD >> 6) | (Inode::IWRITE >> 6) | (Inode::IEXEC >> 6);
-    pNode->i_nlink = 1;
-    ib->iput(pNode);
-
+    // rootdir
+    creatRoot();
     // init SuperBlock
     Buf *bp = bufmgr->getBlk(SUPER_BLOCK_START);
     IOMove((byte *)sb, bp->b_addr, sizeof(SuperBlock));
@@ -167,16 +187,13 @@ void FileSystem::update()
         bufmgr->bwrite(bp);
     }
     // update bitmap
-    bp = bufmgr->getBlk(INODE_BITMAP_START);
+    bp = bufmgr->bread(INODE_BITMAP_START);
     IOMove((byte*)ibmp, bp->b_addr, sizeof(InodeBitmap));
     bufmgr->bwrite(bp);
-    bp = bufmgr->getBlk(DATA_BITMAP_START);
+    bp = bufmgr->bread(DATA_BITMAP_START);
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
     // update inode table
     InodeTable *ib = VDFileSys::getInstance().getInodeTable();
     ib->update();
-
-    // update disk data
-    //bufmgr->bflush();
 }

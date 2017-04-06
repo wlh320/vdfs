@@ -21,7 +21,7 @@ class Shell;
 struct CmdTblEntry
 {
     const char* trigger;   //命令的触发标志
-    void (Shell::*call)();    //处理命令的函数
+    void (Shell::*call)(); //处理命令的函数
     const char* desc;      //对命令的描述
     const char* helpinfo;  //命令的帮助信息
 };
@@ -62,6 +62,8 @@ public:
     void do_save();
     void do_load();
     void do_rm();
+    void do_mkfs();
+    void do_mkdir();
 
 };
 

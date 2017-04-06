@@ -120,6 +120,7 @@ private:
 public:
     void init();
     void loadSuperBlock();
+    void creatRoot(); //创建根目录
 
     Inode* ialloc();  //分配Inode
     Buf* dalloc();  //分配数据块

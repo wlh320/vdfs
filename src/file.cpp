@@ -1,6 +1,28 @@
 #include "file.h"
 #include "vdfs.h"
 #include <cstring>
+#include <cstdio>
+
+File::File()
+{
+    this->inode = NULL;
+    this->flag = 0;
+    this->f_count = 0;
+    this->f_offset = 0;
+}
+void File::close()
+{
+    this->inode = NULL;
+    this->flag = 0;
+    this->f_count = 0;
+    this->f_offset = 0;
+}
+bool File::isOpen()
+{
+    return (this->inode != NULL);
+}
+
+/////////////////////////filemanager//////////////////////////
 
 void FileMgr::init()
 {
@@ -10,9 +32,10 @@ void FileMgr::init()
     this->base = NULL;
 
     strcpy(curdir, "/");
-    this->rootDirInode = ib->iget(0);
-    this->cdir = this->rootDirInode;
-    this->pdir = this->rootDirInode;
+    this->rootDirInode = ib->iget(FileSystem::ROOTINO);
+    this->cdir = ib->iget(FileSystem::ROOTINO);
+    this->pdir = ib->iget(FileSystem::ROOTINO);
+    this->file = new File();
 }
 
 Inode* FileMgr::namei(const char* path,int mode)
@@ -25,8 +48,11 @@ Inode* FileMgr::namei(const char* path,int mode)
     Inode *pInode = this->cdir;
     int freeEntryOffset = 0;
 
-    if(*curchar++ == '/')
+    if(*curchar == '/')
+    {
         pInode = this->rootDirInode;
+        curchar++;
+    }
     ib->iget(pInode->i_number);
     while (*curchar == '/')
     {
@@ -118,7 +144,7 @@ Inode* FileMgr::namei(const char* path,int mode)
             offset += (DirectoryEntry::DIRSIZE + 4);
             count--;
             /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
-            if ( 0 == de.m_ino )
+            if ( 0 == de.m_ino && offset > 64)
             {
                 if ( 0 == freeEntryOffset )
                 {
@@ -145,6 +171,7 @@ Inode* FileMgr::namei(const char* path,int mode)
         if ( FileMgr::DELETE == mode && '\0' == *curchar )
         {
             /* 如果对父目录没有写的权限  略*/
+            // 删除模式,返回父目录的inode
             return pInode;
         }
         /*
@@ -182,6 +209,7 @@ void FileMgr::writeDir(Inode *pInode)
 Inode* FileMgr::mknode(int mode)
 {
     FileSystem *fsys = VDFileSys::getInstance().getFileSystem();
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     Inode *pInode;
     pInode = fsys->ialloc();
     if(pInode == NULL)
@@ -190,11 +218,28 @@ Inode* FileMgr::mknode(int mode)
     pInode->i_mode = mode | Inode::IALLOC;
     pInode->i_nlink = 1;
 
+    if ( (pInode->i_mode & Inode::IFMT) == Inode::IFDIR ) //初始化.和..
+    {
+        Buf *newBuf = fsys->dalloc();
+        DirectoryEntry initde;
+        initde.m_ino = pInode->i_number;
+        initde.m_name[0] = '.';
+        for(int i = 1; i < DirectoryEntry::DIRSIZE; ++i)
+            initde.m_name[i] = '\0';
+        IOMove((byte*)&initde, newBuf->b_addr, sizeof(DirectoryEntry));
+        initde.m_ino = pdir->i_number;
+        initde.m_name[1] = '.';
+        IOMove((byte*)&initde, newBuf->b_addr + sizeof(DirectoryEntry), sizeof(DirectoryEntry));
+        pInode->i_addr[0] = newBuf->b_blkno;
+        pInode->i_size = 2 * sizeof(DirectoryEntry);
+        bufmgr->bwrite(newBuf);
+    }
+
     this->writeDir(pInode);
     return pInode;
 }
 
-void FileMgr::chdir(const char *path)
+int FileMgr::chdir(const char *path)
 {
     Inode *pInode;
     InodeTable *ib = VDFileSys::getInstance().getInodeTable();
@@ -202,13 +247,13 @@ void FileMgr::chdir(const char *path)
     if(pInode == NULL)
     {
         printErr("No such Directory.chdir failed");
-        return;
+        return -1;
     }
     if((pInode->i_mode & Inode::IFMT) != Inode::IFDIR)
     {
         printErr("No such Directory.chdir failed");
         ib->iput(pInode);
-        return ;
+        return -1;
     }
     ib->iput(cdir);
     cdir = pInode;
@@ -227,37 +272,89 @@ void FileMgr::chdir(const char *path)
     {
         strcpy(curdir, path);
     }
-}
-
-int FileMgr::fread(int fd, char *buffer, int length)
-{
-    this->count = length;
-    this->base  = (byte*)buffer;
-
     return 0;
 }
 
-int FileMgr::fwrite(int fd, char *buffer, int length)
+void FileMgr::creatDir(const char *path)
 {
-    this->count = length;
-    this->base  = (byte*)buffer;
+    Inode* pInode = namei(path, FileMgr::CREATE);
+    if(pInode == NULL)
+        mknode(Inode::IFDIR | 0x1ff);
+}
+
+int FileMgr::fopen(const char *name, int mode)
+{
+    Inode *pInode = namei(name, FileMgr::OPEN);
+    if (pInode == NULL)
+        return -1;
+    file->inode = pInode;
+    file->flag  = mode;
     return 0;
+}
+
+void FileMgr::fclose()
+{
+    file->close();
+}
+
+int FileMgr::fcreat(const char *name, int mode)
+{
+    Inode *pInode = namei(name, FileMgr::CREATE);
+    if(pInode == NULL)
+    {
+        pInode = mknode(mode | 0x1ff);
+        if(pInode == NULL)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        pInode->itrunc();
+    }
+    return 0;
+}
+
+int FileMgr::fread(char *buffer, int length)
+{
+    if(file->isOpen() && file->flag == File::FREAD)
+    {
+        this->count  = length;
+        this->base   = (byte*)buffer;
+        this->offset = file->f_offset;
+        file->inode->readi();
+
+        file->f_offset = this->offset;
+    }
+    return (length - this->count);
+}
+
+int FileMgr::fwrite(char *buffer, int length)
+{
+    if(file->isOpen() && file->flag == File::FWRITE)
+    {
+        this->count  = length;
+        this->base   = (byte*)buffer;
+        this->offset = file->f_offset;
+        file->inode->writei();
+
+        file->f_offset = this->offset;
+    }
+    return (length - this->count);
 }
 
 void FileMgr::test()
 {
-    FileSystem *fsys = VDFileSys::getInstance().getFileSystem();
-    byte *a;
-    a = new byte[135000];
-    for(int i = 0; i < 135000; ++i)
+    char *a;
+    a = new char[1024*1024];
+    for(int i = 0; i < 1024*1024; ++i)
         a[i] = 'l';
-    a[135000] = '\0';
-    count = 135000;
-    offset = 0;
-    base = a;
-    Inode *pNode = fsys->ialloc();
-    pNode->i_flag |= (Inode::IACC | Inode::IUPD);
-    pNode->i_mode = Inode::IALLOC | Inode::IREAD | Inode::IWRITE | Inode::IEXEC | (Inode::IREAD >> 3) | (Inode::IWRITE >> 3) | (Inode::IEXEC >> 3) | (Inode::IREAD >> 6) | (Inode::IWRITE >> 6) | (Inode::IEXEC >> 6);
-    pNode->i_nlink = 1;
-    pNode->writei();
+    a[1024*1024] = '\0';
+
+    int i_mode = Inode::IALLOC;
+
+    fcreat("/test.txt",i_mode);
+    fopen("/test.txt", File::FWRITE);
+    fwrite(a,1024*1024);
+    fclose();
 }
