@@ -31,4 +31,7 @@ int getTime();
 // 最小
 int min(int a, int b);
 
+//简化路径
+char* simplifyPath(char* path);
+
 #endif //UTILS_H

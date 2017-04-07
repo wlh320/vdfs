@@ -17,6 +17,7 @@ VDFileSys::VDFileSys()
 
     bufmgr->init();
     fsys->init();
+    ib->init();
 }
 
 VDFileSys::~VDFileSys()
@@ -87,6 +88,12 @@ int VDFileSys::mkfs()
     if (dskmgr->isOpen())
     {
         fsys->mkfs();
+        // 创建基础目录
+        flmgr->init();
+        flmgr->creatDir("/bin");
+        flmgr->creatDir("/etc");
+        flmgr->creatDir("/usr");
+        flmgr->creatDir("/home");
         return 0;
     }
     return -1;
@@ -216,7 +223,8 @@ void VDFileSys::load(const char* vpath, const char* rpath)
             break;
         fwrite(buffer, 1, cnt, rfile);
     }
-    fclose(rfile);
+    if (rfile)
+        fclose(rfile);
     flmgr->fclose();
     delete buffer;
 }

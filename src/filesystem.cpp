@@ -77,9 +77,8 @@ void FileSystem::loadSuperBlock()
 void FileSystem::creatRoot()
 {
     // make rootdir
-    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     InodeTable *ib = VDFileSys::getInstance().getInodeTable();
-    ib->init();
+    BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     Inode *pInode = ialloc();
     // alloc disk block
     Buf *newBuf = dalloc();
@@ -94,7 +93,7 @@ void FileSystem::creatRoot()
     bufmgr->bwrite(newBuf);
 
     pInode->i_flag |= (Inode::IACC | Inode::IUPD);
-    pInode->i_mode = Inode::IALLOC | Inode::IFDIR /* Most vital!! */| Inode::IREAD | Inode::IWRITE | Inode::IEXEC | (Inode::IREAD >> 3) | (Inode::IWRITE >> 3) | (Inode::IEXEC >> 3) | (Inode::IREAD >> 6) | (Inode::IWRITE >> 6) | (Inode::IEXEC >> 6);
+    pInode->i_mode = Inode::IALLOC | Inode::IFDIR /* Most vital!! */;
     pInode->i_nlink = 1;
     pInode->i_addr[0] = newBuf->b_blkno;
     pInode->i_size = 2 * sizeof(DirectoryEntry);

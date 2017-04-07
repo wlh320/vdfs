@@ -25,18 +25,7 @@ public:
     static const unsigned int IALLOC = 0x8000;		/* 文件被使用 */
     static const unsigned int IFMT = 0x6000;		/* 文件类型掩码 */
     static const unsigned int IFDIR = 0x4000;		/* 文件类型：目录文件 */
-    static const unsigned int IFCHR = 0x2000;		/* 字符设备特殊类型文件 */
-    static const unsigned int IFBLK = 0x6000;		/* 块设备特殊类型文件，为0表示常规数据文件 */
     static const unsigned int ILARG = 0x1000;		/* 文件长度类型：大型或巨型文件 */
-    static const unsigned int ISUID = 0x800;		/* 执行时文件时将用户的有效用户ID修改为文件所有者的User ID */
-    static const unsigned int ISGID = 0x400;		/* 执行时文件时将用户的有效组ID修改为文件所有者的Group ID */
-    static const unsigned int ISVTX = 0x200;		/* 使用后仍然位于交换区上的正文段 */
-    static const unsigned int IREAD = 0x100;		/* 对文件的读权限 */
-    static const unsigned int IWRITE = 0x80;		/* 对文件的写权限 */
-    static const unsigned int IEXEC = 0x40;			/* 对文件的执行权限 */
-    static const unsigned int IRWXU = (IREAD|IWRITE|IEXEC);		/* 文件主对文件的读、写、执行权限 */
-    static const unsigned int IRWXG = ((IRWXU) >> 3);			/* 文件主同组用户对文件的读、写、执行权限 */
-    static const unsigned int IRWXO = ((IRWXU) >> 6);			/* 其他用户对文件的读、写、执行权限 */
 
     static const int BLOCK_SIZE = 512;		/* 文件逻辑块大小: 512字节 */
     static const int ADDRESS_PER_INDEX_BLOCK = BLOCK_SIZE / sizeof(int);    /* 每个间接索引表(或索引块)包含的物理盘块号 */

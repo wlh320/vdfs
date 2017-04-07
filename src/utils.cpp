@@ -54,3 +54,41 @@ int min(int a, int b)
 {
     return a < b ? a : b;
 }
+
+char* simplifyPath(char* path)
+{
+    int top = -1;
+    int i, j;
+
+    for(i = 0; path[i] != '\0'; ++i)
+    {
+        path[++top] = path[i];
+        if(top >= 1 && path[top - 1] == '/' && path[top] == '.' && (path[i + 1] == '/' || path[i + 1] == '\0'))
+            top -= 2;
+        else if(top >= 2 && path[top - 2] == '/' && path[top - 1] == '.' && path[top] == '.' && (path[i + 1] == '/' || path[i + 1] == '\0'))
+        {
+            for(j = top - 3; j >= 0; --j)
+                if(path[j] == '/')
+                    break;
+            if(j < 0)
+                top = -1;
+            else
+                top = j - 1;
+        }
+        else if(path[top] == '/' && path[i + 1] == '/')
+            --top;
+    }
+    if(top > 0)
+    {
+        if(path[top] == '/') path[top] = '\0';
+        else path[top + 1] = '\0';
+    }
+    else if(top == 0)
+        path[top + 1] = '\0';
+    else
+    {
+        path[0] = '/';
+        path[1] = '\0';
+    }
+    return path;
+}

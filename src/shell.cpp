@@ -9,7 +9,7 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     //命令      入口函数           命令功能描述              命令帮助信息
     { "exit",  &Shell::do_exit,  "保存所有更改并退出shell", "exit" },
     { "help",  &Shell::do_help,  "打印命令帮助信息",        "help [命令]" },
-    { "mount",  &Shell::do_mount,"加载虚拟磁盘文件",        "load 磁盘文件路径"},
+    { "mount",  &Shell::do_mount,"加载虚拟磁盘文件",        "mount 磁盘文件路径"},
     { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
 
     { "mkfs",  &Shell::do_mkfs,  "将磁盘格式化",           "mkfs"},
@@ -176,9 +176,8 @@ void Shell::do_mount()
         else
         {
             VDFileSys::getInstance().loadFilesys();
-
+            VDFileSys::getInstance().getFileMgr()->init();
         }
-        VDFileSys::getInstance().getFileMgr()->init();
         strcpy(this->disk, this->args[0]);
     }
 }

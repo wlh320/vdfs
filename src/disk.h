@@ -18,7 +18,6 @@ class DiskMgr
 public:
     const static int BLOCK_SIZE = 512;
     const static int NSECTOR = 3 + 128 + 4096;
-
     const static int DISK_SIZE = NSECTOR * BLOCK_SIZE;
 
 private:

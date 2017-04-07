@@ -1,4 +1,5 @@
 #include "file.h"
+#include "utils.h"
 #include "vdfs.h"
 #include <cstring>
 #include <cstdio>
@@ -269,6 +270,7 @@ int FileMgr::chdir(const char *path)
     {
         strcpy(curdir, path);
     }
+    simplifyPath(curdir); // 路径简化 去掉.和..
     return 0;
 }
 
@@ -373,4 +375,3 @@ void FileMgr::fdelete(const char *name)
     ib->iput(pParentInode);
     ib->iput(pInode);
 }
-

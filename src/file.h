@@ -63,9 +63,7 @@ public:
     Inode* namei(const char *path, int mode); // 路径线性搜索
     Inode* mknode(int mode);//创建inode
     void   writeDir(Inode* pInode);  //目录项写入上一级
-    void   removeDot();              // 化简路径字符串
     void   creatDir(const char* path); // 创建目录
-
     // 系统调用
     void ls();
     int  chdir(const char *path);
@@ -74,7 +72,6 @@ public:
     void fclose();
     int  fread(char *buffer, int length);
     int  fwrite(char *buffer, int length);
-    int  flseek(int position);
     void fdelete(const char *name);
 };
 

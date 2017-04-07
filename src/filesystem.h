@@ -100,7 +100,6 @@ class FileSystem
 public:
     static const int SUPER_BLOCK_START = 0;
     static const int ROOTINO = 0;			/* 文件系统根目录外存Inode编号 */
-
     static const int INODE_BITMAP_START = 1;
     static const int DATA_BITMAP_START = 2;
 
@@ -110,8 +109,6 @@ public:
 
     static const int DATA_ZONE_START = 131; /* 数据区的起始扇区号 */
     static const int DATA_ZONE_SIZE = 4096;	/* 数据区占据的扇区数量 */
-    static const int DATA_ZONE_END = DATA_ZONE_START + DATA_ZONE_SIZE; /* 数据区的结束扇区号 */
-
 private:
     SuperBlock *sb;
     InodeBitmap *ibmp;
@@ -129,7 +126,6 @@ public:
 
     void mkfs();    //格式化磁盘
     void update();  //将修改写入磁盘
-
 };
 
 #endif // FILESYSTEM_H

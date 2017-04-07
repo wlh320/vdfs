@@ -238,7 +238,7 @@ void Inode::writei()
             bufmgr->bwrite(bp);
         }
         /* 普通文件长度增加 */
-        if( (this->i_size < fmgr->offset) && (this->i_mode & (Inode::IFBLK & Inode::IFCHR)) == 0 )
+        if( (this->i_size < fmgr->offset))
         {
             this->i_size = fmgr->offset;
         }
@@ -318,11 +318,6 @@ void Inode::itrunc()
     BufMgr *bufmgr = VDFileSys::getInstance().getBufMgr();
     FileSystem *filesys = VDFileSys::getInstance().getFileSystem();
 
-    /* 如果是字符设备或者块设备则退出 */
-    if( this->i_mode & (Inode::IFCHR & Inode::IFBLK) )
-    {
-        return;
-    }
     /* 采用FILO方式释放，以尽量使得SuperBlock中记录的空闲盘块号连续。*/
     for(int i = 9; i >= 0; i--)		/* 从i_addr[9]到i_addr[0] */
     {
@@ -371,7 +366,7 @@ void Inode::itrunc()
     // 修改inode
     this->i_size = 0;
     this->i_flag |= Inode::IUPD;
-    this->i_mode &= ~(Inode::ILARG & Inode::IRWXU & Inode::IRWXG & Inode::IRWXO);
+    this->i_mode &= ~(Inode::ILARG);
     this->i_nlink = 1;
 }
 
