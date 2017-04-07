@@ -64,7 +64,7 @@ public:
     void do_rm();
     void do_mkfs();
     void do_mkdir();
-
+    void do_cat();
 };
 
 #endif // SHELL_H

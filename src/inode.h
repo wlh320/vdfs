@@ -19,8 +19,6 @@ public:
         ILOCK = 0x1,		/* 索引节点上锁 */
         IUPD  = 0x2,		/* 内存inode被修改过，需要更新相应外存inode */
         IACC  = 0x4,		/* 内存inode被访问过，需要修改最近一次访问时间 */
-        IWANT = 0x10,		/* 有进程正在等待该内存inode被解锁，清ILOCK标志时，要唤醒这种进程 */
-        ITEXT = 0x20		/* 内存inode对应进程图像的正文段 */
     };
 
     /* static const member */

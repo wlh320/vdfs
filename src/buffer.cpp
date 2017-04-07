@@ -34,11 +34,6 @@ Buf* BufMgr::getBlk(int blkno)
         /* 不是要找的缓存，则继续 */
         if(bp->b_blkno != blkno)
             continue;
-
-        if(bp->b_flags & Buf::B_BUSY)
-        {
-            bp->b_flags |= Buf::B_WANTED;
-        }
         /* 从自由队列中取出 */
         bp->av_back->av_forw = bp->av_forw;
         bp->av_forw->av_back = bp->av_back;
@@ -55,7 +50,7 @@ Buf* BufMgr::getBlk(int blkno)
     bp->av_forw->av_back = bp->av_back;
     /* 设置B_BUSY标志 */
     bp->b_flags |= Buf::B_BUSY;
-
+    bclear(bp);
     bp->b_blkno = blkno;
     return bp;
 }
@@ -63,7 +58,6 @@ Buf* BufMgr::getBlk(int blkno)
 Buf* BufMgr::bread(int blkno)
 {
     Buf* bp;
-    /* 根据设备号，字符块号申请缓存 */
     bp = this->getBlk(blkno);
     /* 如果在设备队列中找到所需缓存，即B_DONE已设置，就不需进行I/O操作 */
     if(bp->b_flags & Buf::B_DONE)
@@ -74,46 +68,28 @@ Buf* BufMgr::bread(int blkno)
     bp->b_flags |= Buf::B_READ;
     bp->b_wcount = BufMgr::BUFFER_SIZE;
 
-    /*
-     * 将I/O请求块送入相应设备I/O请求队列，如无其它I/O请求，则将立即执行本次I/O请求；
-     * 否则等待当前I/O请求执行完毕后，由中断处理程序启动执行此请求。
-     * 注：Strategy()函数将I/O请求块送入设备请求队列后，不等I/O操作执行完毕，就直接返回。
-     */
     this->strategy(bp);
-    /* 同步读，等待I/O操作结束 */
     return bp;
 }
 
 void BufMgr::bwrite(Buf *bp)
 {
-    unsigned int flags = bp->b_flags;
-
-    bp->b_flags &= ~(Buf::B_READ | Buf::B_DONE | Buf::B_ERROR | Buf::B_DELWRI);
+    bp->b_flags &= ~(Buf::B_READ | Buf::B_DONE);
     bp->b_wcount = BufMgr::BUFFER_SIZE;		/* 512字节 */
 
     bp->b_flags |= Buf::B_WRITE;
 
     this->strategy(bp);
 
-    if( (flags & Buf::B_ASYNC) == 0 )
-    {
-        /* 同步写，需要等待I/O操作结束 */
-        this->brelse(bp);
-    }
-    return;
-}
-
-void BufMgr::bdwrite(Buf *bp)
-{
-    bp->b_flags |= (Buf::B_DELWRI | Buf::B_DONE);
     this->brelse(bp);
+
     return;
 }
 
 // 释放:缓存进入自由缓存队列队尾
 void BufMgr::brelse(Buf *bp)
 {
-    bp->b_flags &= ~(Buf::B_WANTED | Buf::B_BUSY | Buf::B_ASYNC);
+    bp->b_flags &= ~(Buf::B_BUSY);
     (this->freelist.av_back)->av_forw = bp;
     bp->av_back = this->freelist.av_back;
     bp->av_forw = &(this->freelist);
@@ -126,55 +102,19 @@ void BufMgr::bclear(Buf *bp)
     memset(bc, 0, BUFFER_SIZE);
 }
 
-void BufMgr::bflush()
-{
-    Buf *bp;
-    for(bp = this->freelist.av_forw; bp != &(this->freelist); bp = bp->av_forw)
-    {
-        /* 找出自由队列中所有延迟写的块 */
-        if( (bp->b_flags & Buf::B_DELWRI))
-        {
-            bp->b_flags |= Buf::B_ASYNC;
-            /* 从自由队列中取出 */
-            bp->av_back->av_forw = bp->av_forw;
-            bp->av_forw->av_back = bp->av_back;
-            /* 设置B_BUSY标志 */
-            bp->b_flags |= Buf::B_BUSY;
-            this->bwrite(bp);
-        }
-    }
-}
-
 int BufMgr::strategy(Buf* bp)
 {
     /* 检查I/O操作块是否超出了该硬盘的扇区数上限 */
     if(bp->b_blkno >= DiskMgr::NSECTOR)
-    {
-        /* 设置出错标志 */
-        bp->b_flags |= Buf::B_ERROR;
+        return 0;
 
-        /*
-         * 出错情况下不真正执行I/O操作，这里相当于模拟磁盘中断
-         * 处理程序中调用IODone()唤醒等待I/O操作结束的进程。
-         */
-        //bm.IODone(bp);
-        bp->b_flags |= Buf::B_DONE;
-        return 0;	/* GCC likes it ! */
-    }
-
-    /* 将bp加入I/O请求队列的队尾，此时I/O队列已经退化到单链表形式，将bp->av_forw标志着链表结尾 */
+    /* 将bp加入I/O请求队列的队尾 */
     bp->av_forw = NULL;
 
-    //X86Assembly::CLI();
-
     if(d_actf == NULL)
-    {
         d_actf = bp;
-    }
     else
-    {
         d_actl->av_forw = bp;
-    }
     d_actl = bp;
 
     if(d_actf == NULL)
@@ -183,10 +123,6 @@ int BufMgr::strategy(Buf* bp)
     /* 设置磁盘寄存器，启动I/O操作 */
     DiskMgr *dm = VDFileSys::getInstance().getDiskMgr();
     dm->devStart(bp);
-
-    //bp->b_flags |= Buf::B_DONE; // ?
-
-    //X86Assembly::STI();
 
     return 0;
 }

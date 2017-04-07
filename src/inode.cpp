@@ -443,6 +443,8 @@ void InodeTable::iput(Inode *pInode)
         {
             pInode->itrunc();
             pInode->i_mode = 0;
+            FileSystem *fsys = VDFileSys::getInstance().getFileSystem();
+            fsys->ifree(pInode->i_number);
         }
         /* 更新外存Inode信息 */
         pInode->iupdate(getTime());

@@ -50,6 +50,7 @@ SuperBlock::SuperBlock()
     this->s_fmod   = 0;
     this->s_ronly  = 0;
     this->s_time   = getTime();
+    padding[118]   = 0x686c7700; // _(:зゝ∠)_
 }
 
 ////////////FileSystem 类///////////////
@@ -107,14 +108,14 @@ void FileSystem::mkfs()
     // rootdir
     creatRoot();
     // init SuperBlock
-    Buf *bp = bufmgr->getBlk(SUPER_BLOCK_START);
+    Buf *bp = bufmgr->bread(SUPER_BLOCK_START);
     IOMove((byte *)sb, bp->b_addr, sizeof(SuperBlock));
     bufmgr->bwrite(bp);
     // init Bitmap
-    bp = bufmgr->getBlk(INODE_BITMAP_START);
+    bp = bufmgr->bread(INODE_BITMAP_START);
     IOMove((byte*)ibmp, bp->b_addr, sizeof(InodeBitmap));
     bufmgr->bwrite(bp);
-    bp = bufmgr->getBlk(DATA_BITMAP_START);
+    bp = bufmgr->bread(DATA_BITMAP_START);
     IOMove((byte*)dbmp, bp->b_addr, sizeof(DataBitmap));
     bufmgr->bwrite(bp);
 }

@@ -118,7 +118,7 @@ Inode* FileMgr::namei(const char* path,int mode)
                         /* 将空闲目录项偏移量存入u区中，写目录项WriteDir()会用到 */
                         offset = freeEntryOffset - (DirectoryEntry::DIRSIZE + 4);
                     }
-                    else  /*问题：为何if分支没有置IUPD标志？  这是因为文件的长度没有变呀*/
+                    else
                     {
                         pInode->i_flag |= Inode::IUPD;
                     }
@@ -130,9 +130,7 @@ Inode* FileMgr::namei(const char* path,int mode)
             if ( offset % Inode::BLOCK_SIZE == 0 )
             {
                 if ( NULL != pBuf )
-                {
                     bufmgr->brelse(pBuf);
-                }
                 /* 计算要读的物理盘块号 */
                 int phyBlkno = pInode->bmap(offset / Inode::BLOCK_SIZE );
                 pBuf = bufmgr->bread(phyBlkno);
@@ -181,7 +179,6 @@ Inode* FileMgr::namei(const char* path,int mode)
         ib->iput(pInode);
         pInode = ib->iget(de.m_ino);
         /* 回到外层While(true)循环，继续匹配Pathname中下一路径分量 */
-
         if ( NULL == pInode )	/* 获取失败 */
         {
             return NULL;
@@ -277,9 +274,13 @@ int FileMgr::chdir(const char *path)
 
 void FileMgr::creatDir(const char *path)
 {
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
     Inode* pInode = namei(path, FileMgr::CREATE);
     if(pInode == NULL)
-        mknode(Inode::IFDIR | 0x1ff);
+    {
+        pInode = mknode(Inode::IFDIR | 0x1ff);
+        ib->iput(pInode);
+    }
 }
 
 int FileMgr::fopen(const char *name, int mode)
@@ -289,11 +290,17 @@ int FileMgr::fopen(const char *name, int mode)
         return -1;
     file->inode = pInode;
     file->flag  = mode;
-    return 0;
+
+    if ((pInode->i_mode & Inode::IFMT) == Inode::IFDIR)
+        return 1; // 打开目录
+
+    return 0; // 打开文件
 }
 
 void FileMgr::fclose()
 {
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
+    ib->iput(file->inode);
     file->close();
 }
 
@@ -304,14 +311,10 @@ int FileMgr::fcreat(const char *name, int mode)
     {
         pInode = mknode(mode | 0x1ff);
         if(pInode == NULL)
-        {
             return -1;
-        }
     }
     else
-    {
         pInode->itrunc();
-    }
     return 0;
 }
 
@@ -343,18 +346,31 @@ int FileMgr::fwrite(char *buffer, int length)
     return (length - this->count);
 }
 
-void FileMgr::test()
+void FileMgr::fdelete(const char *name)
 {
-    char *a;
-    a = new char[1024*1024];
-    for(int i = 0; i < 1024*1024; ++i)
-        a[i] = 'l';
-    a[1024*1024] = '\0';
+    Inode *pInode;
+    Inode *pParentInode;
+    InodeTable *ib = VDFileSys::getInstance().getInodeTable();
 
-    int i_mode = Inode::IALLOC;
+    pParentInode = namei(name, FileMgr::DELETE);
+    if (pParentInode == NULL)
+    {
+        printErr("Delete:No such file");
+        return ;
+    }
+    pInode = ib->iget(de.m_ino);
+    /* 写入清零后的目录项 */
+    this->offset -= sizeof(DirectoryEntry);
+    this->base = (byte*)&de;
+    this->count = sizeof(DirectoryEntry);
 
-    fcreat("/test.txt",i_mode);
-    fopen("/test.txt", File::FWRITE);
-    fwrite(a,1024*1024);
-    fclose();
+    de.m_ino = 0;
+    pParentInode->writei();
+    /* 修改inode项 */
+    pInode->i_nlink--;
+    pInode->i_flag |= Inode::IUPD;
+
+    ib->iput(pParentInode);
+    ib->iput(pInode);
 }
+

@@ -47,7 +47,6 @@ public:
     Inode* rootDirInode;/* 根目录内存Inode */
     Inode* cdir;  /* 指向当前目录的Inode指针 */
     Inode* pdir;	/* 指向父目录的Inode指针 */
-
     DirectoryEntry de;	/* 当前目录的目录项 */
     char dbuf[DirectoryEntry::DIRSIZE]; /* 当前路径分量 */
     char curdir[128]; /* 当前工作目录完整路径 */
@@ -55,32 +54,28 @@ public:
     byte *base; //读写目标区域
     int offset;//当前读写文件的偏移
     int count; //当前剩余读写字节
-    //打开的文件
+    //打开的文件 一个
     File *file;
 public:
     void init();
 
-
     // 用到的方法
     Inode* namei(const char *path, int mode); // 路径线性搜索
     Inode* mknode(int mode);//创建inode
-    void   writeDir(Inode* pInode);
-    void   removeDot();
-
-    void creatDir(const char* path);
+    void   writeDir(Inode* pInode);  //目录项写入上一级
+    void   removeDot();              // 化简路径字符串
+    void   creatDir(const char* path); // 创建目录
 
     // 系统调用
     void ls();
-    int chdir(const char *path);
+    int  chdir(const char *path);
     int  fopen(const char *name, int mode);
     int  fcreat(const char *name, int mode);
     void fclose();
     int  fread(char *buffer, int length);
     int  fwrite(char *buffer, int length);
     int  flseek(int position);
-    int  fdelete(char *name);
-
-    void test();
+    void fdelete(const char *name);
 };
 
 #endif // FILE_H

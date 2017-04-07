@@ -2,7 +2,6 @@
 #include "utils.h"
 #include <cstdio>
 #include <cstring>
-#include <cstdlib>
 
 // 内置命令入口表的定义
 CmdTblEntry Shell::cte[CTE_MAX] =
@@ -13,13 +12,15 @@ CmdTblEntry Shell::cte[CTE_MAX] =
     { "mount",  &Shell::do_mount,"加载虚拟磁盘文件",        "load 磁盘文件路径"},
     { "eject", &Shell::do_eject, "卸载当前虚拟磁盘文件",     "eject"},
 
+    { "mkfs",  &Shell::do_mkfs,  "将磁盘格式化",           "mkfs"},
     { "ls",    &Shell::do_ls,    "列出路径下的文件",        "ls [路径]" },
     { "cd",    &Shell::do_cd,    "修改当前路径",           "cd 路径" },
+    { "cat",   &Shell::do_cat,   "输出文件内容",           "cat 文件路径"},
     { "save",  &Shell::do_save,  "将文件保存至虚拟磁盘",     "save 实际路径 虚拟路径"},
     { "load",  &Shell::do_load,  "将文件从虚拟磁盘中取出",   "load 虚拟路径 实际路径"},
     { "mkdir", &Shell::do_mkdir, "在虚拟磁盘中创建目录",     "mkdir 路径"},
     { "rm",    &Shell::do_rm,    "将文件从虚拟磁盘中删除",   "rm 虚拟路径"},
-    { "mkfs",  &Shell::do_mkfs,  "将磁盘格式化",            "mkfs"},
+
     { NULL,    NULL,             NULL,                   NULL }
 };
 
@@ -178,7 +179,6 @@ void Shell::do_mount()
 
         }
         VDFileSys::getInstance().getFileMgr()->init();
-        VDFileSys::getInstance().getFileMgr()->test();
         strcpy(this->disk, this->args[0]);
     }
 }
@@ -186,8 +186,9 @@ void Shell::do_mount()
 // 卸载磁盘文件
 void Shell::do_eject()
 {
-    if(!strcmp(this->disk, "No Disk"))
+    if(strcmp(this->disk, "No Disk"))
     {
+        VDFileSys::getInstance().getFileSystem()->update();
         VDFileSys::getInstance().closeDisk();
         strcpy(this->disk, "No Disk");
     }
@@ -223,12 +224,13 @@ void Shell::do_ls()
         for(int i = 0; i < argc; ++i)
         {
             printf("%s :\n", args[i]);
+            VDFileSys::getInstance().ls(args[i]);
             printf("\n");
-            VDFileSys::getInstance().ls();
         }
     }
 }
-// chdir 切换目录
+
+// 切换目录
 void Shell::do_cd()
 {
     if(argc == 0)
@@ -257,7 +259,7 @@ void Shell::do_save()
     }
 }
 
-// 将虚拟磁盘中的文件导出
+// 将虚拟磁盘中的文件取出
 void Shell::do_load()
 {
     if(argc != 2)
@@ -276,7 +278,7 @@ void Shell::do_rm()
 {
     if(argc == 0)
     {
-        printErr("Need 1 arguments");
+        printErr("Need 1 argument");
     }
     else
     {
@@ -284,7 +286,7 @@ void Shell::do_rm()
     }
 }
 
-//格式化
+//格式化磁盘
 void Shell::do_mkfs()
 {
     VDFileSys::getInstance().mkfs();
@@ -294,11 +296,24 @@ void Shell::do_mkdir()
 {
     if(argc == 0)
     {
-        printErr("Need arguments");
+        printErr("Need 1 argument");
     }
     else
     {
         VDFileSys::getInstance().mkdir(args[0]);
+    }
+}
+
+// 输出文件内容
+void Shell::do_cat()
+{
+    if(argc == 0)
+    {
+        printErr("Need 1 argument");
+    }
+    else
+    {
+        VDFileSys::getInstance().cat(args[0]);
     }
 }
 
