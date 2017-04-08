@@ -1,7 +1,7 @@
 CXX = g++
 RM = rm
 SRC = ../src
-CXXFLAGS = -Wall -std=gnu++11 -O2 -fPIC -pipe -I$(SRC)
+CXXFLAGS = -Wall -O2 -fPIC -pipe -I$(SRC)
 SRCS = $(wildcard $(SRC)/*.cpp)
 OBJS = $(patsubst %cpp,%o,$(notdir $(SRCS)))
 TARGET = vdfs

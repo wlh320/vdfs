@@ -16,7 +16,7 @@ typedef unsigned char byte;
 // bitmap functions
 void setBit0(unsigned int* value, int bitPosition);
 void setBit1(unsigned int* value, int bitPosition);
-int firstOnePos(unsigned int x);
+int firstOnePos(int x);
 
 // 出错提示
 void printErr(const char *msg);

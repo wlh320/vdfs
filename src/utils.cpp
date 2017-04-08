@@ -17,7 +17,7 @@ void setBit0(unsigned int* value, int bitPosition)
 
 // 奇技淫巧返回第一个为1的位置
 // http://www.matrix67.com/blog/archives/3985
-int firstOnePos(unsigned int x)
+int firstOnePos(int x)
 {
     static const int MultiplyDeBruijnBitPosition[32] =
     {

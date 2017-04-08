@@ -171,7 +171,6 @@ void VDFileSys::mkdir(const char *vpath)
 void VDFileSys::save(const char* rpath, const char* vpath)
 {
     int cnt;
-    char *buffer = new char[512];
     // C标准库打开外部文件
     FILE *rfile = fopen(rpath,"rb");
     int vfile = flmgr->fopen(vpath,File::FWRITE);
@@ -190,6 +189,8 @@ void VDFileSys::save(const char* rpath, const char* vpath)
         printErr("your input is NOT a file");
         return ;
     }
+
+    char *buffer = new char[512];
     while(true)
     {
         cnt = fread(buffer, 1, 512, rfile);
@@ -199,13 +200,12 @@ void VDFileSys::save(const char* rpath, const char* vpath)
     }
     fclose(rfile);
     flmgr->fclose();
-    delete buffer;
+    delete []buffer;
 }
 
 void VDFileSys::load(const char* vpath, const char* rpath)
 {
     int cnt;
-    char *buffer = new char[512];
     // C标准库打开外部文件
     FILE *rfile = fopen(rpath,"wb");
     // 我的调用打开内部文件
@@ -216,6 +216,8 @@ void VDFileSys::load(const char* vpath, const char* rpath)
         printErr("Read virtual file failed");
         return;
     }
+
+    char *buffer = new char[512];
     while(true)
     {
         cnt = flmgr->fread(buffer, 512);
@@ -226,7 +228,7 @@ void VDFileSys::load(const char* vpath, const char* rpath)
     if (rfile)
         fclose(rfile);
     flmgr->fclose();
-    delete buffer;
+    delete []buffer;
 }
 
 void VDFileSys::rm(const char* vpath)
@@ -259,6 +261,6 @@ void VDFileSys::cat(const char *path)
         else
             printErr("Not a file");
         flmgr->fclose();
-        delete buffer;
+        delete []buffer;
     }
 }

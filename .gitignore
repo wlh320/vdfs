@@ -1,2 +1,2 @@
-/build-vdfs-*
-/src/vdfs.pro.user
+/build/*.o
+/build/vdfs

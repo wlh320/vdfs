@@ -67,7 +67,7 @@ mkdir           在虚拟磁盘中创建目录
 rm              将文件从虚拟磁盘中删除
 ```
 
-更详细的使用方法请观看：[使用方法asciinima演示](https://asciinema.org/a/5txcfc2fdtnw4y3omikjzfkvz)
+更详细的使用方法请观看：[使用方法asciinema演示](https://asciinema.org/a/5txcfc2fdtnw4y3omikjzfkvz)
 
 ### TODO
 
